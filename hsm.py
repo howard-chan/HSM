@@ -45,7 +45,7 @@ class HSM(object):
 
     def __RootHandler(self, event):
         print "\tUnhandled event:%s %s[%s]" % (event, self.name, self.curState)
-        raise "Unhandled event:", (event, self.name, self.curState)
+        raise "Unhandled event"
         return None
 
     def __init__(self, name=""):
