@@ -24,29 +24,33 @@ SOFTWARE.
 #ifndef __HSM_H__
 #define __HSM_H__
 
-//#TODO:
-// 1) Add Tran INIT check
-
-// Enable for HSM debugging
-#define HSM_DEBUG
-
 // The following can be moved to another file
-#define NULL 		((void *)0)
-#define TRUE		(1)
-#define FALSE		(0)
+#define NULL        ((void *)0)
+#define TRUE        (1)
+#define FALSE       (0)
 typedef unsigned int UINT32;
 typedef unsigned char UINT8;
 
+//----HSM OPTIONAL FEATURES SECTION[BEGIN]----
+// Enable for HSM debugging
+#define HSM_DEBUG
+// Enable safety checks.  Can be disabled after validating all states
+#define HSM_CHECK
+// Enable HSME_INIT Handling.  Can be disabled if no states handles HSME_INIT
+#define HSM_INIT_FEATURE
+//----HSM OPTIONAL FEATURES SECTION[END]----
+
+// Set the maximum nested levels
 #define HSM_MAX_DEPTH 5
 
-// State definitions
-#define HSME_NULL	0
-#define HSME_ENTRY	1
-#define HSME_EXIT	2
-#define HSME_INIT	3
-#define HSME_START	4
+//----State definitions----
+#define HSME_NULL   0
+#define HSME_ENTRY  1
+#define HSME_EXIT   2
+#define HSME_INIT   3
+#define HSME_START  4
 
-// Structure declaration
+//----Structure declaration----
 typedef UINT32 HSM_EVENT;
 typedef struct HSM_STATE_T HSM_STATE;
 typedef struct HSM_T HSM;
@@ -55,19 +59,23 @@ typedef HSM_EVENT (* HSM_FN)(HSM *This, HSM_EVENT event, UINT32 param);
 
 struct HSM_STATE_T
 {
-	HSM_STATE *parent;			// parent state
-	HSM_FN handler;				// associated event handler for state
-	char *name;             	// name of state
-	UINT8 level;                // depth level of the state
+    HSM_STATE *parent;          // parent state
+    HSM_FN handler;             // associated event handler for state
+    char *name;                 // name of state
+    UINT8 level;                // depth level of the state
 };
 
 struct HSM_T
 {
-	HSM_STATE *curState;		// Current HSM State
-	char *name;					// Name of HSM Machine
-	UINT8 hsmDebug;				// HSM debug flag
+    HSM_STATE *curState;        // Current HSM State
+    char *name;                 // Name of HSM Machine
+    UINT8 hsmDebug;             // HSM run-time debug flag
+#ifdef HSM_CHECK
+    UINT8 hsmTran;              // HSM Transition Flag
+#endif // HSM_CHECK
 };
 
+//----Function Declarations----
 // Func: void HSM_STATE_Create(HSM_STATE *This, char *name, HSM_FN handler, HSM_STATE *parent)
 // Desc: Create an HSM State for the HSM.
 // This: Pointer to HSM_STATE object
