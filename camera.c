@@ -177,15 +177,15 @@ HSM_EVENT CAMERA_StateOnDispMenuHndlr(HSM *This, HSM_EVENT event, UINT32 param)
 
 void CAMERA_Init(CAMERA *This, char *name)
 {
-    // Step 1: Initiailize the HSM and starting state
-    HSM_Create((HSM *)This, name, &CAMERA_StateOff);
-    // Step 2: Create the HSM States
+    // Step 1: Create the HSM States
     HSM_STATE_Create(&CAMERA_StateOff, "Off", CAMERA_StateOffHndlr, NULL);
     HSM_STATE_Create(&CAMERA_StateOn, "On", CAMERA_StateOnHndlr, NULL);
     HSM_STATE_Create(&CAMERA_StateOnShoot, "On.Shoot", CAMERA_StateOnShootHndlr, &CAMERA_StateOn);
     HSM_STATE_Create(&CAMERA_StateOnDisp, "On.Disp", CAMERA_StateOnDispHndlr, &CAMERA_StateOn);
     HSM_STATE_Create(&CAMERA_StateOnDispPlay, "On.Disp.Play", CAMERA_StateOnDispPlayHndlr, &CAMERA_StateOnDisp);
     HSM_STATE_Create(&CAMERA_StateOnDispMenu, "On.Disp.Menu", CAMERA_StateOnDispMenuHndlr, &CAMERA_StateOnDisp);
+    // Step 2: Initiailize the HSM and starting state
+    HSM_Create((HSM *)This, name, &CAMERA_StateOff);
     // Step 3: [Optional] Enable HSM debug
     This->parent.hsmDebug = 1;
     // Step 4: CAMERA member initialization
