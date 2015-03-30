@@ -33,9 +33,9 @@ typedef unsigned char UINT8;
 
 //----HSM OPTIONAL FEATURES SECTION[BEGIN]----
 // Enable for HSM debugging
-#define HSM_DEBUG
+#define HSM_DEBUG_ENABLE
 // Enable safety checks.  Can be disabled after validating all states
-#define HSM_CHECK
+#define HSM_CHECK_ENABLE
 // Enable HSME_INIT Handling.  Can be disabled if no states handles HSME_INIT
 #define HSM_INIT_FEATURE
 //----HSM OPTIONAL FEATURES SECTION[END]----
@@ -49,6 +49,17 @@ typedef unsigned char UINT8;
 #define HSME_EXIT   2
 #define HSME_INIT   3
 #define HSME_START  4
+
+//----Debug Macros----
+#ifdef HSM_DEBUG_ENABLE
+// Using printf for DEBUG
+#include <stdio.h>
+#define HSM_DEBUGC(...) { if(This->hsmDebug) printf(__VA_ARGS__); }
+#define HSM_DEBUG(...)  { printf(__VA_ARGS__); }
+#else
+#define HSM_DEBUGC(...)
+#define HSM_DEBUG(...)
+#endif // HSM_DEBUG_ENABLE
 
 //----Structure declaration----
 typedef UINT32 HSM_EVENT;
@@ -70,9 +81,9 @@ struct HSM_T
     HSM_STATE *curState;        // Current HSM State
     char *name;                 // Name of HSM Machine
     UINT8 hsmDebug;             // HSM run-time debug flag
-#ifdef HSM_CHECK
+#ifdef HSM_CHECK_ENABLE
     UINT8 hsmTran;              // HSM Transition Flag
-#endif // HSM_CHECK
+#endif // HSM_CHECK_ENABLE
 };
 
 //----Function Declarations----
