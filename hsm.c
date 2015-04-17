@@ -167,6 +167,6 @@ void HSM_Tran(HSM *This, HSM_STATE *nextState, UINT32 param, void (*method)(void
 #ifdef HSM_INIT_FEATURE
     // 6) Invoke INIT signal, NOTE: Only HSME_INIT can recursively call HSM_Tran()
     HSM_DEBUGC("  %s[%s](INIT)\n", This->name, nextState->name);
-    This->curState->handler(This, HSME_INIT, 0);
+    This->curState->handler(This, HSME_INIT, param);
 #endif // HSM_INIT_FEATURE
 }
