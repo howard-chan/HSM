@@ -45,10 +45,10 @@ typedef unsigned char UINT8;
 
 //----State definitions----
 #define HSME_NULL   0
-#define HSME_ENTRY  1
-#define HSME_EXIT   2
-#define HSME_INIT   3
-#define HSME_START  4
+#define HSME_START  1
+#define HSME_ENTRY  ((HSM_EVENT)(-3))
+#define HSME_EXIT   ((HSM_EVENT)(-2))
+#define HSME_INIT   ((HSM_EVENT)(-1))
 
 //----Debug Macros----
 #ifdef HSM_DEBUG_ENABLE
@@ -114,12 +114,12 @@ HSM_STATE *HSM_GetState(HSM *This);
 // param: Parameter associated with HSM_EVENT
 void HSM_Run(HSM *This, HSM_EVENT event, UINT32 param);
 
-// Func: void HSM_Tran(HSM *This, HSM_STATE *nextState, UINT32 param, void (*method)(void))
+// Func: void HSM_Tran(HSM *This, HSM_STATE *nextState, UINT32 param, void (*method)(HSM *This, UINT32 param));
 // Desc: Transition to another HSM STATE
 // This: Pointer to HSM instance
 // nextState: Pointer to next HSM STATE
-// param: Optional Parameter associated with HSME_ENTRY and HSME_EXIT event
-// moethod: Optional function hook between the HSME_ENTRY and HSME_EXIT event handling
-void HSM_Tran(HSM *This, HSM_STATE *nextState, UINT32 param, void (*method)(void));
+// param: Optional Parameter associated with HSME_ENTRY, HSME_EXIT, HSME_INIT event
+// method: Optional function hook between the HSME_ENTRY and HSME_EXIT event handling
+void HSM_Tran(HSM *This, HSM_STATE *nextState, UINT32 param, void (*method)(HSM *This, UINT32 param));
 
 #endif // __HSM_H__

@@ -92,7 +92,7 @@ void HSM_Run(HSM *This, HSM_EVENT event, UINT32 param)
     }
 }
 
-void HSM_Tran(HSM *This, HSM_STATE *nextState, UINT32 param, void (*method)(void))
+void HSM_Tran(HSM *This, HSM_STATE *nextState, UINT32 param, void (*method)(HSM *This, UINT32 param))
 {
 #ifdef HSM_CHECK_ENABLE
     // [optional] Check for illegal call to HSM_Tran in HSME_ENTRY or HSME_EXIT
@@ -150,7 +150,7 @@ void HSM_Tran(HSM *This, HSM_STATE *nextState, UINT32 param, void (*method)(void
     // 3) Call the transitional method hook
     if (method)
     {
-        method();
+        method(This, param);
     }
     // 4) Process all the entry events
     for (idx = 0; idx < cnt_entry; idx++)
