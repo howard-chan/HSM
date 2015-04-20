@@ -33,9 +33,9 @@ typedef unsigned char UINT8;
 
 //----HSM OPTIONAL FEATURES SECTION[BEGIN]----
 // Enable for HSM debugging
-#define HSM_DEBUG
+#define HSM_DEBUG_ENABLE
 // Enable safety checks.  Can be disabled after validating all states
-#define HSM_CHECK
+#define HSM_CHECK_ENABLE
 // Enable HSME_INIT Handling.  Can be disabled if no states handles HSME_INIT
 #define HSM_INIT_FEATURE
 //----HSM OPTIONAL FEATURES SECTION[END]----
@@ -45,10 +45,21 @@ typedef unsigned char UINT8;
 
 //----State definitions----
 #define HSME_NULL   0
-#define HSME_ENTRY  1
-#define HSME_EXIT   2
-#define HSME_INIT   3
-#define HSME_START  4
+#define HSME_START  1
+#define HSME_INIT   ((HSM_EVENT)(-3))
+#define HSME_ENTRY  ((HSM_EVENT)(-2))
+#define HSME_EXIT   ((HSM_EVENT)(-1))
+
+//----Debug Macros----
+#ifdef HSM_DEBUG_ENABLE
+// Using printf for DEBUG
+#include <stdio.h>
+#define HSM_DEBUGC(...) { if(This->hsmDebug) printf(__VA_ARGS__); }
+#define HSM_DEBUG(...)  { printf(__VA_ARGS__); }
+#else
+#define HSM_DEBUGC(...)
+#define HSM_DEBUG(...)
+#endif // HSM_DEBUG_ENABLE
 
 //----Structure declaration----
 typedef UINT32 HSM_EVENT;
@@ -70,9 +81,9 @@ struct HSM_T
     HSM_STATE *curState;        // Current HSM State
     char *name;                 // Name of HSM Machine
     UINT8 hsmDebug;             // HSM run-time debug flag
-#ifdef HSM_CHECK
+#ifdef HSM_CHECK_ENABLE
     UINT8 hsmTran;              // HSM Transition Flag
-#endif // HSM_CHECK
+#endif // HSM_CHECK_ENABLE
 };
 
 //----Function Declarations----
@@ -103,12 +114,12 @@ HSM_STATE *HSM_GetState(HSM *This);
 // param: Parameter associated with HSM_EVENT
 void HSM_Run(HSM *This, HSM_EVENT event, UINT32 param);
 
-// Func: void HSM_Tran(HSM *This, HSM_STATE *nextState, UINT32 param, void (*method)(void))
+// Func: void HSM_Tran(HSM *This, HSM_STATE *nextState, UINT32 param, void (*method)(HSM *This, UINT32 param));
 // Desc: Transition to another HSM STATE
 // This: Pointer to HSM instance
 // nextState: Pointer to next HSM STATE
-// param: Optional Parameter associated with HSME_ENTRY and HSME_EXIT event
-// moethod: Optional function hook between the HSME_ENTRY and HSME_EXIT event handling
-void HSM_Tran(HSM *This, HSM_STATE *nextState, UINT32 param, void (*method)(void));
+// param: Optional Parameter associated with HSME_ENTRY, HSME_EXIT, HSME_INIT event
+// method: Optional function hook between the HSME_ENTRY and HSME_EXIT event handling
+void HSM_Tran(HSM *This, HSM_STATE *nextState, UINT32 param, void (*method)(HSM *This, UINT32 param));
 
 #endif // __HSM_H__

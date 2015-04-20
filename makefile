@@ -3,11 +3,11 @@
 # Source files
 TARGET	= camera
 
-# Compler 
+# Compler
 CC    	= gcc
 INC 	= -I .
 OBJ 	= $(addsuffix .o, $(basename $(wildcard *.c)))
-CFLAGS 	= -Werror $(INC)
+CFLAGS 	= -Werror $(INC) -g
 
 # The targets
 .PHONY: all clean

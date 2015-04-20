@@ -24,18 +24,9 @@ SOFTWARE.
 
 #include "hsm.h"
 
-#ifdef HSM_DEBUG
-#include <stdio.h>
-#define DEBUGC(...) { if(This->hsmDebug) printf(__VA_ARGS__); }
-#define DEBUG(...)  printf(__VA_ARGS__)
-#else
-#define DEBUGC(...)
-#define DEBUG(...)
-#endif // HSM_DEBUG
-
 HSM_EVENT HSM_RootHandler(HSM *This, HSM_EVENT event, UINT32 param)
 {
-    DEBUG("\tUnhandled event:%d %s[%s]\n", event, This->name, This->curState->name);
+    HSM_DEBUG("\tEvent:%d dropped, No Parent handling of %s[%s]\n", event, This->name, This->curState->name);
     return HSME_NULL;
 }
 
@@ -59,7 +50,7 @@ void HSM_STATE_Create(HSM_STATE *This, char *name, HSM_FN handler, HSM_STATE *pa
     This->level = parent->level + 1;
     if (This->level >= HSM_MAX_DEPTH)
     {
-        DEBUG("Please increase HSM_MAX_DEPTH > %d", This->level);
+        HSM_DEBUG("Please increase HSM_MAX_DEPTH > %d", This->level);
         // assert(0, "Please incrase HSM_MAX_DEPTH");
         while(1);
     }
@@ -71,6 +62,11 @@ void HSM_Create(HSM *This, char *name, HSM_STATE *initState)
     This->curState = initState;
     This->name = name;
     This->hsmDebug = FALSE;
+    // Invoke ENTRY and INIT event
+    HSM_DEBUGC("  %s[%s](ENTRY)\n", This->name, initState->name);
+    This->curState->handler(This, HSME_ENTRY, 0);
+    HSM_DEBUGC("  %s[%s](INIT)\n", This->name, initState->name);
+    This->curState->handler(This, HSME_INIT, 0);
 }
 
 HSM_STATE *HSM_GetState(HSM *This)
@@ -84,30 +80,30 @@ void HSM_Run(HSM *This, HSM_EVENT event, UINT32 param)
     // This runs the state's event handler and forwards unhandled events to
     // the parent state
     HSM_STATE *state = This->curState;
-    DEBUGC("Run %s[%s](evt:%d, param:%08x)\n", This->name, state->name, event, param);
+    HSM_DEBUGC("\nRun %s[%s](evt:%d, param:%08x)\n", This->name, state->name, event, param);
     while (event)
     {
         event = state->handler(This, event, param);
         state = state->parent;
         if (event)
         {
-            DEBUGC("  evt:%d unhandled, passing to %s[%s]\n", event, This->name, state->name);
+            HSM_DEBUGC("  evt:%d unhandled, passing to %s[%s]\n", event, This->name, state->name);
         }
     }
 }
 
-void HSM_Tran(HSM *This, HSM_STATE *nextState, UINT32 param, void (*method)(void))
+void HSM_Tran(HSM *This, HSM_STATE *nextState, UINT32 param, void (*method)(HSM *This, UINT32 param))
 {
-#ifdef HSM_CHECK
+#ifdef HSM_CHECK_ENABLE
     // [optional] Check for illegal call to HSM_Tran in HSME_ENTRY or HSME_EXIT
     if (This->hsmTran)
     {
-        DEBUG("!!!!Illegal call of HSM_Tran in HSME_ENTRY or HSME_EXIT Handler!!!!");
+        HSM_DEBUG("!!!!Illegal call of HSM_Tran in HSME_ENTRY or HSME_EXIT Handler!!!!");
         return;
     }
     // Guard HSM_Tran() from certain recursive calls
     This->hsmTran = 1;
-#endif // HSM_CHECK
+#endif // HSM_CHECK_ENABLE
 
     HSM_STATE *list_exit[HSM_MAX_DEPTH];
     HSM_STATE *list_entry[HSM_MAX_DEPTH];
@@ -116,7 +112,7 @@ void HSM_Tran(HSM *This, HSM_STATE *nextState, UINT32 param, void (*method)(void
     UINT8 idx;
     // This performs the state transition with calls of exit, entry and init
     // Bulk of the work handles the exit and entry event during transitions
-    DEBUG("Tran %s[%s -> %s]\n", This->name, This->curState->name, nextState->name);
+    HSM_DEBUG("Tran %s[%s -> %s]\n", This->name, This->curState->name, nextState->name);
     // 1) Find the lowest common parent state
     HSM_STATE *src = This->curState;
     HSM_STATE *dst = nextState;
@@ -148,29 +144,29 @@ void HSM_Tran(HSM *This, HSM_STATE *nextState, UINT32 param, void (*method)(void
     for (idx = 0; idx < cnt_exit; idx++)
     {
         src = list_exit[idx];
-        DEBUGC("  %s[%s](EXIT)\n", This->name, src->name);
+        HSM_DEBUGC("  %s[%s](EXIT)\n", This->name, src->name);
         src->handler(This, HSME_EXIT, param);
     }
     // 3) Call the transitional method hook
     if (method)
     {
-        method();
+        method(This, param);
     }
     // 4) Process all the entry events
     for (idx = 0; idx < cnt_entry; idx++)
     {
         dst = list_entry[cnt_entry - idx - 1];
-        DEBUGC("  %s[%s](ENTRY)\n", This->name, dst->name);
+        HSM_DEBUGC("  %s[%s](ENTRY)\n", This->name, dst->name);
         dst->handler(This, HSME_ENTRY, param);
     }
     // 5) Now we can set the destination state
     This->curState = nextState;
-#ifdef HSM_CHECK
+#ifdef HSM_CHECK_ENABLE
     This->hsmTran = 0;
-#endif // HSM_CHECK
+#endif // HSM_CHECK_ENABLE
 #ifdef HSM_INIT_FEATURE
     // 6) Invoke INIT signal, NOTE: Only HSME_INIT can recursively call HSM_Tran()
-    DEBUGC("  %s[%s](INIT)\n", This->name, nextState->name);
-    This->curState->handler(This, HSME_INIT, 0);
+    HSM_DEBUGC("  %s[%s](INIT)\n", This->name, nextState->name);
+    This->curState->handler(This, HSME_INIT, param);
 #endif // HSM_INIT_FEATURE
 }
