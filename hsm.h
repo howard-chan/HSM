@@ -46,9 +46,9 @@ typedef unsigned char UINT8;
 //----State definitions----
 #define HSME_NULL   0
 #define HSME_START  1
-#define HSME_ENTRY  ((HSM_EVENT)(-3))
-#define HSME_EXIT   ((HSM_EVENT)(-2))
-#define HSME_INIT   ((HSM_EVENT)(-1))
+#define HSME_INIT   ((HSM_EVENT)(-3))
+#define HSME_ENTRY  ((HSM_EVENT)(-2))
+#define HSME_EXIT   ((HSM_EVENT)(-1))
 
 //----Debug Macros----
 #ifdef HSM_DEBUG_ENABLE
