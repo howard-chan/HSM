@@ -24,23 +24,24 @@ SOFTWARE.
 
 #include "hsm.h"
 
-HSM_EVENT HSM_RootHandler(HSM *This, HSM_EVENT event, UINT32 param)
+HSM_EVENT HSM_RootHandler(HSM *This, HSM_EVENT event, void *param)
 {
-    HSM_DEBUG("\tEvent:%d dropped, No Parent handling of %s[%s]\n", event, This->name, This->curState->name);
+    HSM_DEBUG("\tEvent:%lx dropped, No Parent handling of %s[%s] param %lx",
+              (unsigned long)event, This->name, This->curState->name, (unsigned long)param);
     return HSME_NULL;
 }
 
 HSM_STATE HSM_ROOT =
 {
-    .parent = NULL,
+    .parent = ((void *)0),
     .handler = HSM_RootHandler,
     .name = ":ROOT:",
     .level = 0
 };
 
-void HSM_STATE_Create(HSM_STATE *This, char *name, HSM_FN handler, HSM_STATE *parent)
+void HSM_STATE_Create(HSM_STATE *This, const char *name, HSM_FN handler, HSM_STATE *parent)
 {
-    if (NULL == parent)
+    if (((void *)0) == parent)
     {
         parent = &HSM_ROOT;
     }
@@ -51,21 +52,29 @@ void HSM_STATE_Create(HSM_STATE *This, char *name, HSM_FN handler, HSM_STATE *pa
     if (This->level >= HSM_MAX_DEPTH)
     {
         HSM_DEBUG("Please increase HSM_MAX_DEPTH > %d", This->level);
-        // assert(0, "Please incrase HSM_MAX_DEPTH");
+        // assert(0, "Please increase HSM_MAX_DEPTH");
         while(1);
     }
 }
 
-void HSM_Create(HSM *This, char *name, HSM_STATE *initState)
+void HSM_Create(HSM *This, const char *name, HSM_STATE *initState)
 {
+    // Setup debug
+#ifdef HSM_DEBUG_ENABLE
+    This->name = name;
+    This->prefix = "";
+    This->hsmDebug = 0;
+#else
+    // Supress warning for unused variable
+    (void)name;
+#endif // HSM_DEBUG_ENABLE
+
     // Initialize state
     This->curState = initState;
-    This->name = name;
-    This->hsmDebug = FALSE;
     // Invoke ENTRY and INIT event
-    HSM_DEBUGC("  %s[%s](ENTRY)\n", This->name, initState->name);
+    HSM_DEBUGC1("  %s[%s](ENTRY)", This->name, initState->name);
     This->curState->handler(This, HSME_ENTRY, 0);
-    HSM_DEBUGC("  %s[%s](INIT)\n", This->name, initState->name);
+    HSM_DEBUGC1("  %s[%s](INIT)", This->name, initState->name);
     This->curState->handler(This, HSME_INIT, 0);
 }
 
@@ -75,30 +84,39 @@ HSM_STATE *HSM_GetState(HSM *This)
     return This->curState;
 }
 
-void HSM_Run(HSM *This, HSM_EVENT event, UINT32 param)
+void HSM_Run(HSM *This, HSM_EVENT event, void *param)
 {
     // This runs the state's event handler and forwards unhandled events to
     // the parent state
     HSM_STATE *state = This->curState;
-    HSM_DEBUGC("\nRun %s[%s](evt:%d, param:%08x)\n", This->name, state->name, event, param);
+#ifdef HSM_DECODE
+    HSM_DEBUGC1("Run %s[%s](evt:%s, param:%08lx)", This->name, state->name, HSM_DECODE(event), (unsigned long)param);
+#else
+    HSM_DEBUGC1("Run %s[%s](evt:%lx, param:%08lx)", This->name, state->name, (unsigned long)event, (unsigned long)param);
+#endif // HSM_DECODE
     while (event)
     {
         event = state->handler(This, event, param);
         state = state->parent;
         if (event)
         {
-            HSM_DEBUGC("  evt:%d unhandled, passing to %s[%s]\n", event, This->name, state->name);
+#ifdef HSM_DECODE
+            HSM_DEBUGC1("  evt:%s unhandled, passing to %s[%s]", HSM_DECODE(event), This->name, state->name);
+#else
+            HSM_DEBUGC1("  evt:%lx unhandled, passing to %s[%s]", (unsigned long)event, This->name, state->name);
+#endif // HSM_DECODE
         }
     }
 }
 
-void HSM_Tran(HSM *This, HSM_STATE *nextState, UINT32 param, void (*method)(HSM *This, UINT32 param))
+void HSM_Tran(HSM *This, HSM_STATE *nextState, void *param, void (*method)(HSM *This, void *param))
 {
 #ifdef HSM_CHECK_ENABLE
     // [optional] Check for illegal call to HSM_Tran in HSME_ENTRY or HSME_EXIT
     if (This->hsmTran)
     {
-        HSM_DEBUG("!!!!Illegal call of HSM_Tran in HSME_ENTRY or HSME_EXIT Handler!!!!");
+        HSM_DEBUG("!!!!Illegal call of HSM_Tran[%s -> %s] in HSME_ENTRY or HSME_EXIT Handler!!!!",
+            This->curState->name, nextState->name);
         return;
     }
     // Guard HSM_Tran() from certain recursive calls
@@ -107,12 +125,12 @@ void HSM_Tran(HSM *This, HSM_STATE *nextState, UINT32 param, void (*method)(HSM 
 
     HSM_STATE *list_exit[HSM_MAX_DEPTH];
     HSM_STATE *list_entry[HSM_MAX_DEPTH];
-    UINT8 cnt_exit = 0;
-    UINT8 cnt_entry = 0;
-    UINT8 idx;
+    uint8_t cnt_exit = 0;
+    uint8_t cnt_entry = 0;
+    uint8_t idx;
     // This performs the state transition with calls of exit, entry and init
     // Bulk of the work handles the exit and entry event during transitions
-    HSM_DEBUG("Tran %s[%s -> %s]\n", This->name, This->curState->name, nextState->name);
+    HSM_DEBUGC2("Tran %s[%s -> %s]", This->name, This->curState->name, nextState->name);
     // 1) Find the lowest common parent state
     HSM_STATE *src = This->curState;
     HSM_STATE *dst = nextState;
@@ -144,7 +162,7 @@ void HSM_Tran(HSM *This, HSM_STATE *nextState, UINT32 param, void (*method)(HSM 
     for (idx = 0; idx < cnt_exit; idx++)
     {
         src = list_exit[idx];
-        HSM_DEBUGC("  %s[%s](EXIT)\n", This->name, src->name);
+        HSM_DEBUGC2("  %s[%s](EXIT)", This->name, src->name);
         src->handler(This, HSME_EXIT, param);
     }
     // 3) Call the transitional method hook
@@ -156,7 +174,7 @@ void HSM_Tran(HSM *This, HSM_STATE *nextState, UINT32 param, void (*method)(HSM 
     for (idx = 0; idx < cnt_entry; idx++)
     {
         dst = list_entry[cnt_entry - idx - 1];
-        HSM_DEBUGC("  %s[%s](ENTRY)\n", This->name, dst->name);
+        HSM_DEBUGC2("  %s[%s](ENTRY)", This->name, dst->name);
         dst->handler(This, HSME_ENTRY, param);
     }
     // 5) Now we can set the destination state
@@ -166,7 +184,7 @@ void HSM_Tran(HSM *This, HSM_STATE *nextState, UINT32 param, void (*method)(HSM 
 #endif // HSM_CHECK_ENABLE
 #ifdef HSM_INIT_FEATURE
     // 6) Invoke INIT signal, NOTE: Only HSME_INIT can recursively call HSM_Tran()
-    HSM_DEBUGC("  %s[%s](INIT)\n", This->name, nextState->name);
+    HSM_DEBUGC2("  %s[%s](INIT)", This->name, nextState->name);
     This->curState->handler(This, HSME_INIT, param);
 #endif // HSM_INIT_FEATURE
 }

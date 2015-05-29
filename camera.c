@@ -59,7 +59,7 @@ HSM_STATE CAMERA_StateOnDisp;
 HSM_STATE CAMERA_StateOnDispPlay;
 HSM_STATE CAMERA_StateOnDispMenu;
 
-HSM_EVENT CAMERA_StateOffHndlr(HSM *This, HSM_EVENT event, UINT32 param)
+HSM_EVENT CAMERA_StateOffHndlr(HSM *This, HSM_EVENT event, void *param)
 {
     if (event == HSME_ENTRY)
     {
@@ -78,7 +78,7 @@ HSM_EVENT CAMERA_StateOffHndlr(HSM *This, HSM_EVENT event, UINT32 param)
     return event;
 }
 
-HSM_EVENT CAMERA_StateOnHndlr(HSM *This, HSM_EVENT event, UINT32 param)
+HSM_EVENT CAMERA_StateOnHndlr(HSM *This, HSM_EVENT event, void *param)
 {
     if (event == HSME_ENTRY)
     {
@@ -107,7 +107,7 @@ HSM_EVENT CAMERA_StateOnHndlr(HSM *This, HSM_EVENT event, UINT32 param)
     return event;
 }
 
-HSM_EVENT CAMERA_StateOnShootHndlr(HSM *This, HSM_EVENT event, UINT32 param)
+HSM_EVENT CAMERA_StateOnShootHndlr(HSM *This, HSM_EVENT event, void *param)
 {
     if (event == HSME_ENTRY)
     {
@@ -132,7 +132,7 @@ HSM_EVENT CAMERA_StateOnShootHndlr(HSM *This, HSM_EVENT event, UINT32 param)
     return event;
 }
 
-HSM_EVENT CAMERA_StateOnDispHndlr(HSM *This, HSM_EVENT event, UINT32 param)
+HSM_EVENT CAMERA_StateOnDispHndlr(HSM *This, HSM_EVENT event, void *param)
 {
     if (event == HSME_ENTRY)
     {
@@ -145,7 +145,7 @@ HSM_EVENT CAMERA_StateOnDispHndlr(HSM *This, HSM_EVENT event, UINT32 param)
     return event;
 }
 
-HSM_EVENT CAMERA_StateOnDispPlayHndlr(HSM *This, HSM_EVENT event, UINT32 param)
+HSM_EVENT CAMERA_StateOnDispPlayHndlr(HSM *This, HSM_EVENT event, void *param)
 {
     if (event == HSME_ENTRY)
     {
@@ -160,7 +160,7 @@ HSM_EVENT CAMERA_StateOnDispPlayHndlr(HSM *This, HSM_EVENT event, UINT32 param)
     return event;
 }
 
-HSM_EVENT CAMERA_StateOnDispMenuHndlr(HSM *This, HSM_EVENT event, UINT32 param)
+HSM_EVENT CAMERA_StateOnDispMenuHndlr(HSM *This, HSM_EVENT event, void *param)
 {
     if (event == HSME_ENTRY)
     {
@@ -187,13 +187,13 @@ void CAMERA_Init(CAMERA *This, char *name)
     // Step 2: Initiailize the HSM and starting state
     HSM_Create((HSM *)This, name, &CAMERA_StateOff);
     // Step 3: [Optional] Enable HSM debug
-    This->parent.hsmDebug = 1;
+    HSM_SET_DEBUG((HSM *)This, "[DBG] ", 1);
     // Step 4: CAMERA member initialization
     This->param1 = 0;
     This->param2 = 1;
 }
 
-void CAMERA_Run(CAMERA *This, HSM_EVENT event, UINT32 param)
+void CAMERA_Run(CAMERA *This, HSM_EVENT event, void *param)
 {
     HSM_Run((HSM *)This, event, param);
 }
