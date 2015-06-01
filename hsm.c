@@ -89,22 +89,22 @@ void HSM_Run(HSM *This, HSM_EVENT event, void *param)
     // This runs the state's event handler and forwards unhandled events to
     // the parent state
     HSM_STATE *state = This->curState;
-#ifdef HSM_DECODE
-    HSM_DEBUGC1("Run %s[%s](evt:%s, param:%08lx)", This->name, state->name, HSM_DECODE(event), (unsigned long)param);
+#ifdef HSM_DEBUG_EVT2STR
+    HSM_DEBUGC1("Run %s[%s](evt:%s, param:%08lx)", This->name, state->name, HSM_DEBUG_EVT2STR(event), (unsigned long)param);
 #else
     HSM_DEBUGC1("Run %s[%s](evt:%lx, param:%08lx)", This->name, state->name, (unsigned long)event, (unsigned long)param);
-#endif // HSM_DECODE
+#endif // HSM_DEBUG_EVT2STR
     while (event)
     {
         event = state->handler(This, event, param);
         state = state->parent;
         if (event)
         {
-#ifdef HSM_DECODE
-            HSM_DEBUGC1("  evt:%s unhandled, passing to %s[%s]", HSM_DECODE(event), This->name, state->name);
+#ifdef HSM_DEBUG_EVT2STR
+            HSM_DEBUGC1("  evt:%s unhandled, passing to %s[%s]", HSM_DEBUG_EVT2STR(event), This->name, state->name);
 #else
             HSM_DEBUGC1("  evt:%lx unhandled, passing to %s[%s]", (unsigned long)event, This->name, state->name);
-#endif // HSM_DECODE
+#endif // HSM_DEBUG_EVT2STR
         }
     }
 }

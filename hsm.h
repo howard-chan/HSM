@@ -33,15 +33,21 @@ extern "C" {
 #include <stdint.h>
 #else
 // The following can be moved to another file
-typedef unsigned int uint32_t;
-typedef unsigned char uint8_t;
+typedef unsigned int   uint32_t;
+typedef unsigned short uint16_t;
+typedef unsigned char  uint8_t;
 #endif
 
 //----HSM OPTIONAL FEATURES SECTION[BEGIN]----
 // Enable for HSM debugging
 #define HSM_DEBUG_ENABLE
-// If HSM_DEBUG_ENABLED is defined, then select DEBUG OUT type
-//#define HSM_DEBUG_EMBEDDED
+    // If HSM_DEBUG_ENABLE is defined, then select DEBUG OUT type
+    //#define HSM_DEBUG_EMBEDDED
+    // If HSM_DEBUG_ENABLE is defined, you can specify HSM_DEBUG_EVT2STR for custom event to string conversion
+    // For example:
+    //     a) You can define here: #define HSM_DEBUG_EVT2STR(x) (sprintf(This->buffer, "0x%lx", (unsigned long)(x)), This->buffer)
+    //     b) Supply your own function (e.g. eMsgGetString()) and then define in a makefile (e.g. for gcc: "-DHSM_DEBUG_EVT2STR=eMsgGetString")
+    extern const char *eMsgGetString(uint16_t usMsgId);
 // Enable safety checks.  Can be disabled after validating all states
 #define HSM_CHECK_ENABLE
 // Enable HSME_INIT Handling.  Can be disabled if no states handles HSME_INIT
@@ -70,11 +76,12 @@ typedef unsigned char uint8_t;
     #define COLOR_CYN           "\033[1;36m"
     #define COLOR_NON           "\033[0m"
 
-    // Define your custom HSM_DECODE for custom event to string conversion function
-    // For example: #define HSM_DECODE(x) (sprintf(This->buffer, "0x%lx", (unsigned long)(x)), This->buffer)
-
-    // Use this macro to Enable/Disable HSM debugging and changing the prefix for that object
-    #define HSM_SET_DEBUG(hsm, preFix, bEnable) { (hsm)->prefix = preFix; (hsm)->hsmDebug = (bEnable);}
+    // Use this macro to changing the prefix for that object
+    #define HSM_SET_PREFIX(hsm, preFix) { (hsm)->prefix =   (preFix); }
+    // Use this macro to Enable/Disable HSM debugging for that object
+    #define HSM_SET_DEBUG(hsm, bEnable) { (hsm)->hsmDebug = (bEnable);}
+    // Use this macro to get the current HSM debugging state for that object
+    #define HSM_GET_DEBUG(hsm) ((hsm)->hsmDebug)
 
     #ifdef HSM_DEBUG_EMBEDDED
         // This section maybe customized for platform specific debug facilities
@@ -90,7 +97,9 @@ typedef unsigned char uint8_t;
         #define HSM_DEBUG(x, ...)  { printf(x "\n", __VA_ARGS__); }
     #endif // HSM_DEBUG_EMBEDDED
 #else
-    #define HSM_SET_DEBUG(hsm, prefix, bEnable)
+    #define HSM_SET_PREFIX(hsm, preFix)
+    #define HSM_SET_DEBUG(hsm, bEnable)
+    #define HSM_GET_DEBUG(hsm)
     #define HSM_DEBUGC1(...)
     #define HSM_DEBUGC2(...)
     #define HSM_DEBUG(...)
