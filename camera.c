@@ -1,6 +1,9 @@
 /*
 The MIT License (MIT)
+
 Copyright (c) 2015 Howard Chan
+https://github.com/howard-chan/HSM
+
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
 in the Software without restriction, including without limitation the rights
@@ -71,7 +74,6 @@ HSM_EVENT CAMERA_StateOffHndlr(HSM *This, HSM_EVENT event, void *param)
     }
     else if (event == HSME_PWR)
     {
-        printf("<<EVT:HSME_PWR>>\n");
         HSM_Tran(This, &CAMERA_StateOn, 0, NULL);
         return 0;
     }
@@ -94,13 +96,11 @@ HSM_EVENT CAMERA_StateOnHndlr(HSM *This, HSM_EVENT event, void *param)
     }
     else if (event == HSME_PWR)
     {
-        printf("<<EVT:HSME_PWR>>\n");
         HSM_Tran(This, &CAMERA_StateOff, 0, NULL);
         return 0;
     }
     else if (event == HSME_LOWBATT)
     {
-        printf("<<EVT:HSME_LOWBATT>>\n");
         printf("\tBeep low battery warning\n");
         return 0;
     }
@@ -119,13 +119,11 @@ HSM_EVENT CAMERA_StateOnShootHndlr(HSM *This, HSM_EVENT event, void *param)
     }
     else if (event == HSME_RELEASE)
     {
-        printf("<<EVT:HSME_RELEASE>>\n");
         printf("\tCLICK!, save photo\n");
         return 0;
     }
     else if (event == HSME_MODE)
     {
-        printf("<<EVT:HSME_MODE>>\n");
         HSM_Tran(This, &CAMERA_StateOnDispPlay, 0, NULL);
         return 0;
     }
@@ -153,7 +151,6 @@ HSM_EVENT CAMERA_StateOnDispPlayHndlr(HSM *This, HSM_EVENT event, void *param)
     }
     else if (event == HSME_MODE)
     {
-        printf("<<EVT:HSME_MODE>>\n");
         HSM_Tran(This, &CAMERA_StateOnDispMenu, 0, NULL);
         return 0;
     }
@@ -168,11 +165,25 @@ HSM_EVENT CAMERA_StateOnDispMenuHndlr(HSM *This, HSM_EVENT event, void *param)
     }
     else if (event == HSME_MODE)
     {
-        printf("<<EVT:HSME_MODE>>\n");
         HSM_Tran(This, &CAMERA_StateOnShoot, 0, NULL);
         return 0;
     }
     return event;
+}
+
+const char *HSM_Evt2Str(uint32_t event)
+{
+    switch(event)
+    {
+    case HSME_PWR:
+        return "HSME_PWR";
+    case HSME_RELEASE:
+        return "HSME_RELEASE";
+    case HSME_MODE:
+        return "HSME_MODE";
+    case HSME_LOWBATT:
+        return "HSME_LOWBATT";
+    }
 }
 
 void CAMERA_Init(CAMERA *This, char *name)

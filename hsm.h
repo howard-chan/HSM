@@ -2,6 +2,7 @@
 The MIT License (MIT)
 
 Copyright (c) 2015 Howard Chan
+https://github.com/howard-chan/HSM
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -43,11 +44,15 @@ typedef unsigned char  uint8_t;
 #define HSM_DEBUG_ENABLE
     // If HSM_DEBUG_ENABLE is defined, then select DEBUG OUT type
     //#define HSM_DEBUG_EMBEDDED
-    // If HSM_DEBUG_ENABLE is defined, you can specify HSM_DEBUG_EVT2STR for custom event to string conversion
+    // If HSM_DEBUG_ENABLE is defined, you can define HSM_DEBUG_EVT2STR for custom "event to string" function
     // For example:
     //     a) You can define here: #define HSM_DEBUG_EVT2STR(x) (sprintf(This->buffer, "0x%lx", (unsigned long)(x)), This->buffer)
-    //     b) Supply your own function (e.g. eMsgGetString()) and then define in a makefile (e.g. for gcc: "-DHSM_DEBUG_EVT2STR=eMsgGetString")
-    extern const char *eMsgGetString(uint16_t usMsgId);
+    // or
+    //     b) Supply your own function of type "const char *HSM_Evt2Str(uint32_t event)" and then define in a makefile
+    //        (e.g. for gcc: "-DHSM_DEBUG_EVT2STR=HSM_Evt2Str")
+    extern const char *HSM_Evt2Str(uint32_t event);
+    // If HSM_DEBUG_ENABLE is defined, you can define HSM_COLOR_ENABLE to enable color print for color-aware terminals
+    //#define HSM_COLOR_ENABLE
 // Enable safety checks.  Can be disabled after validating all states
 #define HSM_CHECK_ENABLE
 // Enable HSME_INIT Handling.  Can be disabled if no states handles HSME_INIT
@@ -67,15 +72,23 @@ typedef unsigned char  uint8_t;
 //----Debug Macros----
 #ifdef HSM_DEBUG_ENABLE
     // Terminal Colors
-    //#TODO: This should be moved in a common location
-    #define COLOR_RED           "\033[1;31m"
-    #define COLOR_GRN           "\033[1;32m"
-    #define COLOR_YEL           "\033[1;33m"
-    #define COLOR_BLU           "\033[1;34m"
-    #define COLOR_MAG           "\033[1;35m"
-    #define COLOR_CYN           "\033[1;36m"
-    #define COLOR_NON           "\033[0m"
-
+    #ifdef HSM_COLOR_ENABLE
+        #define HSM_COLOR_RED           "\033[1;31m"
+        #define HSM_COLOR_GRN           "\033[1;32m"
+        #define HSM_COLOR_YEL           "\033[1;33m"
+        #define HSM_COLOR_BLU           "\033[1;34m"
+        #define HSM_COLOR_MAG           "\033[1;35m"
+        #define HSM_COLOR_CYN           "\033[1;36m"
+        #define HSM_COLOR_NON           "\033[0m"
+    #else
+        #define HSM_COLOR_RED
+        #define HSM_COLOR_GRN
+        #define HSM_COLOR_YEL
+        #define HSM_COLOR_BLU
+        #define HSM_COLOR_MAG
+        #define HSM_COLOR_CYN
+        #define HSM_COLOR_NON
+    #endif // HSM_COLOR_ENABLE
     // Use this macro to changing the prefix for that object
     #define HSM_SET_PREFIX(hsm, preFix) { (hsm)->prefix =   (preFix); }
     // Use this macro to Enable/Disable HSM debugging for that object
@@ -92,8 +105,8 @@ typedef unsigned char  uint8_t;
     #else
         // Using printf for DEBUG
         #include <stdio.h>
-        #define HSM_DEBUGC1(x, ...) { if (This->hsmDebug) printf(COLOR_BLU "%s" x "\n" COLOR_NON, This->prefix, __VA_ARGS__); }
-        #define HSM_DEBUGC2(x, ...) { if (This->hsmDebug) printf(COLOR_CYN "%s" x "\n" COLOR_NON, This->prefix, __VA_ARGS__); }
+        #define HSM_DEBUGC1(x, ...) { if (This->hsmDebug) printf(HSM_COLOR_BLU "%s" x "\n" HSM_COLOR_NON, This->prefix, __VA_ARGS__); }
+        #define HSM_DEBUGC2(x, ...) { if (This->hsmDebug) printf(HSM_COLOR_CYN "%s" x "\n" HSM_COLOR_NON, This->prefix, __VA_ARGS__); }
         #define HSM_DEBUG(x, ...)  { printf(x "\n", __VA_ARGS__); }
     #endif // HSM_DEBUG_EMBEDDED
 #else
@@ -153,6 +166,13 @@ void HSM_Create(HSM *This, const char *name, HSM_STATE *initState);
 // This: Pointer to HSM instance
 // return|HSM_STATE *: Pointer to HSM STATE
 HSM_STATE *HSM_GetState(HSM *This);
+
+// Func: uint8_t HSM_IsInState(HSM *This, HSM_STATE *state)
+// Desc: Tests whether HSM is in state or parent state
+// This: Pointer to HSM instance
+// state: Pointer to HSM_STATE to test
+// return|uint8_t: 1 - HSM instance is in state or parent state, 0 - otherwise
+uint8_t HSM_IsInState(HSM *This, HSM_STATE *state);
 
 // Func: void HSM_Run(HSM *This, HSM_EVENT event, void *param)
 // Desc: Run the HSM with event

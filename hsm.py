@@ -2,6 +2,7 @@
 The MIT License (MIT)
 
 Copyright (c) 2015 Howard Chan
+https://github.com/howard-chan/HSM
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -30,7 +31,7 @@ class HSM_Event:
 
 class HSM(object):
     class State:
-        """This is a state class used internally"""    
+        """This is a state class used internally"""
         def __init__(self, name, handler, parent=None):
             """Creates a state instance"""
             self.level = 0                  # depth level of the state
@@ -54,7 +55,7 @@ class HSM(object):
         self.hsmDebug = False
         self.stateRoot = self.State(":root:", self.__RootHandler)
         self.curState = self.stateRoot
-    
+
     def CreateState(self, name, handler, parent=None):
         """This adds a state to the HSM"""
         if parent == None:
@@ -66,7 +67,7 @@ class HSM(object):
         if isinstance(initState, self.State):
             self.curState = initState
         else:
-            print "This is not a HSM State"        
+            print "This is not a HSM State"
 
     def GetState(self):
         """This returns the current HSM state"""

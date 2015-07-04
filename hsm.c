@@ -2,6 +2,7 @@
 The MIT License (MIT)
 
 Copyright (c) 2015 Howard Chan
+https://github.com/howard-chan/HSM
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -26,8 +27,13 @@ SOFTWARE.
 
 HSM_EVENT HSM_RootHandler(HSM *This, HSM_EVENT event, void *param)
 {
+#ifdef HSM_DEBUG_EVT2STR
+    HSM_DEBUG("\tEvent:%s dropped, No Parent handling of %s[%s] param %lx",
+              HSM_DEBUG_EVT2STR(event), This->name, This->curState->name, (unsigned long)param);
+#else
     HSM_DEBUG("\tEvent:%lx dropped, No Parent handling of %s[%s] param %lx",
               (unsigned long)event, This->name, This->curState->name, (unsigned long)param);
+#endif // HSM_DEBUG_EVT2STR
     return HSME_NULL;
 }
 
@@ -82,6 +88,22 @@ HSM_STATE *HSM_GetState(HSM *This)
 {
     // This returns the current HSM state
     return This->curState;
+}
+
+uint8_t HSM_IsInState(HSM *This, HSM_STATE *state)
+{
+    HSM_STATE *curState;
+	// Travse the parents to find the matching state.
+    for (curState = This->curState; curState; curState = curState->parent)
+    {
+        if (state == curState)
+        {
+            // Match found, HSM is in state or parent state
+            return 1;
+        }
+    }
+    // This HSM is not in state or parent state
+    return 0;
 }
 
 void HSM_Run(HSM *This, HSM_EVENT event, void *param)
