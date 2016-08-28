@@ -1,7 +1,7 @@
 /*
 The MIT License (MIT)
 
-Copyright (c) 2015 Howard Chan
+Copyright (c) 2015-2016 Howard Chan
 https://github.com/howard-chan/HSM
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -29,34 +29,31 @@ SOFTWARE.
 extern "C" {
 #endif
 
-#if 1
 /* Add platform specific types here */
 #include <stdint.h>
-#else
-// The following can be moved to another file
-typedef unsigned int   uint32_t;
-typedef unsigned short uint16_t;
-typedef unsigned char  uint8_t;
-#endif
 
 //----HSM OPTIONAL FEATURES SECTION[BEGIN]----
 // Enable for HSM debugging
-#define HSM_DEBUG_ENABLE
-    // If HSM_DEBUG_ENABLE is defined, then select DEBUG OUT type
-    //#define HSM_DEBUG_EMBEDDED
-    // If HSM_DEBUG_ENABLE is defined, you can define HSM_DEBUG_EVT2STR for custom "event to string" function
+#define HSM_FEATURE_DEBUG_ENABLE
+    // If HSM_FEATURE_DEBUG_ENABLE is defined, then select DEBUG OUT type
+    //#define HSM_FEATURE_DEBUG_EMBEDDED
+    // If HSM_FEATURE_DEBUG_ENABLE is defined, you can define HSM_DEBUG_EVT2STR for custom "event to string" function
     // For example:
     //     a) You can define here: #define HSM_DEBUG_EVT2STR(x) (sprintf(This->buffer, "0x%lx", (unsigned long)(x)), This->buffer)
     // or
     //     b) Supply your own function of type "const char *HSM_Evt2Str(uint32_t event)" and then define in a makefile
     //        (e.g. for gcc: "-DHSM_DEBUG_EVT2STR=HSM_Evt2Str")
     extern const char *HSM_Evt2Str(uint32_t event);
-    // If HSM_DEBUG_ENABLE is defined, you can define HSM_COLOR_ENABLE to enable color print for color-aware terminals
-    //#define HSM_COLOR_ENABLE
+    // If HSM_FEATURE_DEBUG_ENABLE is defined, you can define HSM_FEATURE_DEBUG_COLOR to enable color print for color-aware terminals
+    #define HSM_FEATURE_DEBUG_COLOR
+    // If HSM_FEATURE_DEBUG_ENABLE is defined, debug messages are indented for each nested HSM_Run() call in a single threaded system
+    //#define HSM_FEATURE_DEBUG_NESTED_CALL
+    // Sets the newline for host (i.e. linux - "\n", windows - "\r\n")
+    #define HSM_NEWLINE         "\n"
 // Enable safety checks.  Can be disabled after validating all states
-#define HSM_CHECK_ENABLE
+#define HSM_FEATURE_SAFETY_CHECK
 // Enable HSME_INIT Handling.  Can be disabled if no states handles HSME_INIT
-#define HSM_INIT_FEATURE
+#define HSM_FEATURE_INIT
 //----HSM OPTIONAL FEATURES SECTION[END]----
 
 // Set the maximum nested levels
@@ -70,9 +67,9 @@ typedef unsigned char  uint8_t;
 #define HSME_EXIT   ((HSM_EVENT)(-1))
 
 //----Debug Macros----
-#ifdef HSM_DEBUG_ENABLE
+#ifdef HSM_FEATURE_DEBUG_ENABLE
     // Terminal Colors
-    #ifdef HSM_COLOR_ENABLE
+    #ifdef HSM_FEATURE_DEBUG_COLOR
         #define HSM_COLOR_RED           "\033[1;31m"
         #define HSM_COLOR_GRN           "\033[1;32m"
         #define HSM_COLOR_YEL           "\033[1;33m"
@@ -88,27 +85,45 @@ typedef unsigned char  uint8_t;
         #define HSM_COLOR_MAG
         #define HSM_COLOR_CYN
         #define HSM_COLOR_NON
-    #endif // HSM_COLOR_ENABLE
+    #endif // HSM_FEATURE_DEBUG_COLOR
     // Use this macro to changing the prefix for that object
     #define HSM_SET_PREFIX(hsm, preFix) { (hsm)->prefix =   (preFix); }
     // Use this macro to Enable/Disable HSM debugging for that object
-    #define HSM_SET_DEBUG(hsm, bEnable) { (hsm)->hsmDebug = (bEnable);}
+    #define HSM_SET_DEBUG(hsm, bmEnable) { (hsm)->hsmDebugCfg = (hsm)->hsmDebug = (bmEnable); }
     // Use this macro to get the current HSM debugging state for that object
-    #define HSM_GET_DEBUG(hsm) ((hsm)->hsmDebug)
+    #define HSM_GET_DEBUG(hsm) ((hsm)->hsmDebugCfg)
+    // Use this macro to supress debug messages for a single call of HSM_Run (e.g. frequent timer events)
+    #define HSM_SUPPRESS_DEBUG(hsm, bmEnable) { (hsm)->hsmDebug = (hsm)->hsmDebugCfg & ~(bmEnable); }
+    // Below are the DEBUG options for HSM_SET_DEBUG(), HSM_SUPPRESS_DEBUG()
+    #define HSM_SHOW_RUN                (1)
+    #define HSM_SHOW_TRAN               (2)
+    #define HSM_SHOW_ALL                (HSM_SHOW_RUN | HSM_SHOW_TRAN)
 
-    #ifdef HSM_DEBUG_EMBEDDED
+    #ifdef HSM_FEATURE_DEBUG_EMBEDDED
         // This section maybe customized for platform specific debug facilities
         // #include "your_embedded_DEBUG_OUT_here.h"
-        #define HSM_DEBUGC1(x, ...) { if (This->hsmDebug) DEBUG_OUT("%s" x, This->prefix, __VA_ARGS__); }
-        #define HSM_DEBUGC2(x, ...) { if (This->hsmDebug) DEBUG_OUT("%s" x, This->prefix, __VA_ARGS__); }
-        #define HSM_DEBUG(...)  { DEBUG_OUT(__VA_ARGS__); }
+        #ifdef HSM_FEATURE_DEBUG_NESTED_CALL
+            #define HSM_DEBUGC1(x, ...) { if (This->hsmDebug & HSM_SHOW_RUN) DEBUG_OUT(HSM_COLOR_BLU "%s%s" x HSM_COLOR_NON HSM_NEWLINE, apucHsmNestIndent[gucHsmNestLevel], This->prefix, __VA_ARGS__); }
+            #define HSM_DEBUGC2(x, ...) { if (This->hsmDebug & HSM_SHOW_TRAN) DEBUG_OUT(HSM_COLOR_CYN "%s%s" x HSM_COLOR_NON HSM_NEWLINE, apucHsmNestIndent[gucHsmNestLevel], This->prefix, __VA_ARGS__); }
+            #define HSM_DEBUG(...)  { DEBUG_OUT(__VA_ARGS__); }
+        #else
+            #define HSM_DEBUGC1(x, ...) { if (This->hsmDebug & HSM_SHOW_RUN) DEBUG_OUT(HSM_COLOR_BLU "%s" x HSM_COLOR_NON HSM_NEWLINE, This->prefix, __VA_ARGS__); }
+            #define HSM_DEBUGC2(x, ...) { if (This->hsmDebug & HSM_SHOW_TRAN) DEBUG_OUT(HSM_COLOR_CYN "%s" x HSM_COLOR_NON HSM_NEWLINE, This->prefix, __VA_ARGS__); }
+            #define HSM_DEBUG(...)  { DEBUG_OUT(__VA_ARGS__); }
+        #endif // HSM_FEATURE_DEBUG_NESTED_CALL
     #else
         // Using printf for DEBUG
         #include <stdio.h>
-        #define HSM_DEBUGC1(x, ...) { if (This->hsmDebug) printf(HSM_COLOR_BLU "%s" x "\n" HSM_COLOR_NON, This->prefix, __VA_ARGS__); }
-        #define HSM_DEBUGC2(x, ...) { if (This->hsmDebug) printf(HSM_COLOR_CYN "%s" x "\n" HSM_COLOR_NON, This->prefix, __VA_ARGS__); }
-        #define HSM_DEBUG(x, ...)  { printf(x "\n", __VA_ARGS__); }
-    #endif // HSM_DEBUG_EMBEDDED
+        #ifdef HSM_FEATURE_DEBUG_NESTED_CALL
+            #define HSM_DEBUGC1(x, ...) { if (This->hsmDebug & HSM_SHOW_RUN) printf(HSM_COLOR_BLU "%s%s" x HSM_COLOR_NON HSM_NEWLINE, apucHsmNestIndent[gucHsmNestLevel], This->prefix, __VA_ARGS__); }
+            #define HSM_DEBUGC2(x, ...) { if (This->hsmDebug & HSM_SHOW_TRAN) printf(HSM_COLOR_CYN "%s%s" x HSM_COLOR_NON HSM_NEWLINE, apucHsmNestIndent[gucHsmNestLevel], This->prefix, __VA_ARGS__); }
+            #define HSM_DEBUG(x, ...)  { printf(x HSM_NEWLINE, __VA_ARGS__); }
+        #else
+            #define HSM_DEBUGC1(x, ...) { if (This->hsmDebug & HSM_SHOW_RUN) printf(HSM_COLOR_BLU "%s" x HSM_COLOR_NON HSM_NEWLINE, This->prefix, __VA_ARGS__); }
+            #define HSM_DEBUGC2(x, ...) { if (This->hsmDebug & HSM_SHOW_TRAN) printf(HSM_COLOR_CYN "%s" x HSM_COLOR_NON HSM_NEWLINE, This->prefix, __VA_ARGS__); }
+            #define HSM_DEBUG(x, ...)  { printf(x HSM_NEWLINE, __VA_ARGS__); }
+        #endif // HSM_FEATURE_DEBUG_NESTED_CALL
+    #endif // HSM_FEATURE_DEBUG_EMBEDDED
 #else
     #define HSM_SET_PREFIX(hsm, preFix)
     #define HSM_SET_DEBUG(hsm, bEnable)
@@ -116,7 +131,7 @@ typedef unsigned char  uint8_t;
     #define HSM_DEBUGC1(...)
     #define HSM_DEBUGC2(...)
     #define HSM_DEBUG(...)
-#endif // HSM_DEBUG_ENABLE
+#endif // HSM_FEATURE_DEBUG_ENABLE
 
 //----Structure declaration----
 typedef uint32_t HSM_EVENT;
@@ -136,15 +151,22 @@ struct HSM_STATE_T
 struct HSM_T
 {
     HSM_STATE *curState;        // Current HSM State
-#ifdef HSM_DEBUG_ENABLE
+#ifdef HSM_FEATURE_DEBUG_ENABLE
     const char *name;           // Name of HSM Machine
     const char *prefix;         // Prefix for debugging (e.g. grep)
+    uint8_t hsmDebugCfg;        // HSM debug configuration flag
     uint8_t hsmDebug;           // HSM run-time debug flag
-#endif // HSM_DEBUG_ENABLE
-#ifdef HSM_CHECK_ENABLE
+#endif // HSM_FEATURE_DEBUG_ENABLE
+#ifdef HSM_FEATURE_SAFETY_CHECK
     uint8_t hsmTran;            // HSM Transition Flag
-#endif // HSM_CHECK_ENABLE
+#endif // HSM_FEATURE_SAFETY_CHECK
 };
+
+//---- External Globals----
+#ifdef HSM_FEATURE_DEBUG_NESTED_CALL
+extern uint8_t gucHsmNestLevel;
+extern const char *apucHsmNestIndent[];
+#endif // HSM_FEATURE_DEBUG_NESTED_CALL
 
 //----Function Declarations----
 // Func: void HSM_STATE_Create(HSM_STATE *This, const char *name, HSM_FN handler, HSM_STATE *parent)

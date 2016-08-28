@@ -1,7 +1,7 @@
 /*
 The MIT License (MIT)
 
-Copyright (c) 2015 Howard Chan
+Copyright (c) 2015-2016 Howard Chan
 https://github.com/howard-chan/HSM
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -24,6 +24,11 @@ SOFTWARE.
 */
 
 #include "hsm.h"
+
+#ifdef HSM_FEATURE_DEBUG_NESTED_CALL
+uint8_t gucHsmNestLevel;
+const char *apucHsmNestIndent[] = { "", "", "\t", "\t\t", "\t\t\t", "\t\t\t\t"};
+#endif // HSM_FEATURE_DEBUG_NESTED_CALL
 
 HSM_EVENT HSM_RootHandler(HSM *This, HSM_EVENT event, void *param)
 {
@@ -66,14 +71,14 @@ void HSM_STATE_Create(HSM_STATE *This, const char *name, HSM_FN handler, HSM_STA
 void HSM_Create(HSM *This, const char *name, HSM_STATE *initState)
 {
     // Setup debug
-#ifdef HSM_DEBUG_ENABLE
+#ifdef HSM_FEATURE_DEBUG_ENABLE
     This->name = name;
     This->prefix = "";
+    This->hsmDebugCfg = 0;
     This->hsmDebug = 0;
-#else
-    // Supress warning for unused variable
+#endif // HSM_FEATURE_DEBUG_ENABLE
+    // Supress warning for unused variable if HSM_FEATURE_DEBUG_ENABLE is not defined
     (void)name;
-#endif // HSM_DEBUG_ENABLE
 
     // Initialize state
     This->curState = initState;
@@ -108,6 +113,11 @@ uint8_t HSM_IsInState(HSM *This, HSM_STATE *state)
 
 void HSM_Run(HSM *This, HSM_EVENT event, void *param)
 {
+#if defined(HSM_FEATURE_DEBUG_ENABLE) && defined(HSM_FEATURE_DEBUG_NESTED_CALL)
+    // Increment the nesting count
+    gucHsmNestLevel++;
+#endif // defined(HSM_FEATURE_DEBUG_ENABLE) && defined(HSM_FEATURE_DEBUG_NESTED_CALL)
+
     // This runs the state's event handler and forwards unhandled events to
     // the parent state
     HSM_STATE *state = This->curState;
@@ -129,11 +139,22 @@ void HSM_Run(HSM *This, HSM_EVENT event, void *param)
 #endif // HSM_DEBUG_EVT2STR
         }
     }
+#ifdef HSM_FEATURE_DEBUG_ENABLE
+    // Restore debug back to the configured debug
+    This->hsmDebug = This->hsmDebugCfg;
+#ifdef HSM_FEATURE_DEBUG_NESTED_CALL
+    if (gucHsmNestLevel)
+    {
+        // Decrement the nesting count
+        gucHsmNestLevel--;
+    }
+#endif // HSM_FEATURE_DEBUG_NESTED_CALL
+#endif // HSM_FEATURE_DEBUG_ENABLE
 }
 
 void HSM_Tran(HSM *This, HSM_STATE *nextState, void *param, void (*method)(HSM *This, void *param))
 {
-#ifdef HSM_CHECK_ENABLE
+#ifdef HSM_FEATURE_SAFETY_CHECK
     // [optional] Check for illegal call to HSM_Tran in HSME_ENTRY or HSME_EXIT
     if (This->hsmTran)
     {
@@ -143,7 +164,7 @@ void HSM_Tran(HSM *This, HSM_STATE *nextState, void *param, void (*method)(HSM *
     }
     // Guard HSM_Tran() from certain recursive calls
     This->hsmTran = 1;
-#endif // HSM_CHECK_ENABLE
+#endif // HSM_FEATURE_SAFETY_CHECK
 
     HSM_STATE *list_exit[HSM_MAX_DEPTH];
     HSM_STATE *list_entry[HSM_MAX_DEPTH];
@@ -201,12 +222,12 @@ void HSM_Tran(HSM *This, HSM_STATE *nextState, void *param, void (*method)(HSM *
     }
     // 5) Now we can set the destination state
     This->curState = nextState;
-#ifdef HSM_CHECK_ENABLE
+#ifdef HSM_FEATURE_SAFETY_CHECK
     This->hsmTran = 0;
-#endif // HSM_CHECK_ENABLE
-#ifdef HSM_INIT_FEATURE
+#endif // HSM_FEATURE_SAFETY_CHECK
+#ifdef HSM_FEATURE_INIT
     // 6) Invoke INIT signal, NOTE: Only HSME_INIT can recursively call HSM_Tran()
     HSM_DEBUGC2("  %s[%s](INIT)", This->name, nextState->name);
     This->curState->handler(This, HSME_INIT, param);
-#endif // HSM_INIT_FEATURE
+#endif // HSM_FEATURE_INIT
 }

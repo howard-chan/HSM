@@ -199,7 +199,7 @@ void CAMERA_Init(CAMERA *This, char *name)
     HSM_Create((HSM *)This, name, &CAMERA_StateOff);
     // Step 3: [Optional] Enable HSM debug
     HSM_SET_PREFIX((HSM *)This, "[DBG] ");
-    HSM_SET_DEBUG((HSM *)This, 1);
+    HSM_SET_DEBUG((HSM *)This, HSM_SHOW_ALL);
     // Step 4: CAMERA member initialization
     This->param1 = 0;
     This->param2 = 1;
