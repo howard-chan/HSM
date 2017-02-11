@@ -113,10 +113,10 @@ uint8_t HSM_IsInState(HSM *This, HSM_STATE *state)
 
 void HSM_Run(HSM *This, HSM_EVENT event, void *param)
 {
-#if defined(HSM_FEATURE_DEBUG_ENABLE) && defined(HSM_FEATURE_DEBUG_NESTED_CALL)
+#if HSM_FEATURE_DEBUG_ENABLE && HSM_FEATURE_DEBUG_NESTED_CALL
     // Increment the nesting count
     gucHsmNestLevel++;
-#endif // defined(HSM_FEATURE_DEBUG_ENABLE) && defined(HSM_FEATURE_DEBUG_NESTED_CALL)
+#endif // HSM_FEATURE_DEBUG_ENABLE && HSM_FEATURE_DEBUG_NESTED_CALL
 
     // This runs the state's event handler and forwards unhandled events to
     // the parent state
