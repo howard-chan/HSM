@@ -25,7 +25,7 @@ SOFTWARE.
 
 #include "hsm.h"
 
-#ifdef HSM_FEATURE_DEBUG_NESTED_CALL
+#if HSM_FEATURE_DEBUG_NESTED_CALL
 uint8_t gucHsmNestLevel;
 const char *apucHsmNestIndent[] = { "", "", "\t", "\t\t", "\t\t\t", "\t\t\t\t"};
 #endif // HSM_FEATURE_DEBUG_NESTED_CALL
@@ -71,7 +71,7 @@ void HSM_STATE_Create(HSM_STATE *This, const char *name, HSM_FN handler, HSM_STA
 void HSM_Create(HSM *This, const char *name, HSM_STATE *initState)
 {
     // Setup debug
-#ifdef HSM_FEATURE_DEBUG_ENABLE
+#if HSM_FEATURE_DEBUG_ENABLE
     This->name = name;
     This->prefix = "";
     This->hsmDebugCfg = 0;
@@ -139,10 +139,10 @@ void HSM_Run(HSM *This, HSM_EVENT event, void *param)
 #endif // HSM_DEBUG_EVT2STR
         }
     }
-#ifdef HSM_FEATURE_DEBUG_ENABLE
+#if HSM_FEATURE_DEBUG_ENABLE
     // Restore debug back to the configured debug
     This->hsmDebug = This->hsmDebugCfg;
-#ifdef HSM_FEATURE_DEBUG_NESTED_CALL
+#if HSM_FEATURE_DEBUG_NESTED_CALL
     if (gucHsmNestLevel)
     {
         // Decrement the nesting count
@@ -154,7 +154,7 @@ void HSM_Run(HSM *This, HSM_EVENT event, void *param)
 
 void HSM_Tran(HSM *This, HSM_STATE *nextState, void *param, void (*method)(HSM *This, void *param))
 {
-#ifdef HSM_FEATURE_SAFETY_CHECK
+#if HSM_FEATURE_SAFETY_CHECK
     // [optional] Check for illegal call to HSM_Tran in HSME_ENTRY or HSME_EXIT
     if (This->hsmTran)
     {
@@ -222,10 +222,10 @@ void HSM_Tran(HSM *This, HSM_STATE *nextState, void *param, void (*method)(HSM *
     }
     // 5) Now we can set the destination state
     This->curState = nextState;
-#ifdef HSM_FEATURE_SAFETY_CHECK
+#if HSM_FEATURE_SAFETY_CHECK
     This->hsmTran = 0;
 #endif // HSM_FEATURE_SAFETY_CHECK
-#ifdef HSM_FEATURE_INIT
+#if HSM_FEATURE_INIT
     // 6) Invoke INIT signal, NOTE: Only HSME_INIT can recursively call HSM_Tran()
     HSM_DEBUGC2("  %s[%s](INIT)", This->name, nextState->name);
     This->curState->handler(This, HSME_INIT, param);
