@@ -1,7 +1,7 @@
 /*
 The MIT License (MIT)
 
-Copyright (c) 2015-2017 Howard Chan
+Copyright (c) 2015-2018 Howard Chan
 https://github.com/howard-chan/HSM
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -319,7 +319,11 @@ It can be difficult to debug the HSM without any type of logging, so it is highl
   2. If the system does not have _printf(...)_ available, then enable the compiler flag **HSM_FEATURE_DEBUG_EMBEDDED** and implement application specific **DEBUG_OUT(...)**
   3. Set **HSM_NEWLINE** to proper carriage return and line feed matching the host environment (i.e. linux, OSX or windows)
   4. If the host is capable of rending terminal colors, then enable **HSM_FEATURE_DEBUG_COLOR** which colorizes the print for easier readability
-  5. Each state machine object can enable or disable debug in run time using **HSM_SET_DEBUG()** and passing the flags: **{HSM_SHOW_RUN, HSM_SHOW_TRAN, HSM_SHOW_ALL}** to enable debug from _HSM_Run()_ and _HSM_Tran()_
+  5. Each state machine object can enable or disable debug in run time using **HSM_SET_DEBUG()** and passing the flags: **{HSM_SHOW_RUN, HSM_SHOW_TRAN, HSM_SHOW_INTACT, HSM_SHOW_ALL}** to enable debug from _HSM_Run()_ and _HSM_Tran()_
+    * HSM_SHOW_RUN - Shows event logging from calls to HSM_Run()
+    * HSM_SHOW_TRAN - Only shows the state to state transition logging from calls to HSM_Tran()
+    * HSM_SHOW_INTACT - Only shows the internal action logging (i.e. HSM_ENTRY, HSM_EXIT, HSME_INIT) from calls to HSM_Tran()
+    * HSM_SHOW_ALL - Shows all logging
 
 3.2 Advance Debug Features
 --------------------------
@@ -336,7 +340,7 @@ For example, using **HSM_SET_PREFIX((HSM *)This, "[DBG] ")**
 ```
 
 3.2.2: HSM_SUPPRESS_DEBUG
-Some state machines can generate a large number of periodic events which generates a lot of noise in the debug logs.  So it is often desireable to momentarily suppress the debug messages for one run (i.e. one call to HSM_Run()).  Simply call **HSM_SUPPRESS_DEBUG()** and pass the flags: __{HSM_SHOW_RUN, HSM_SHOW_TRAN, HSM_SHOW_ALL}__ to suppress debug for one run.  The original flags for **HSM_SET_DEBUG()** are restored for the next run
+Some state machines can generate a large number of periodic events which generates a lot of noise in the debug logs.  So it is often desireable to momentarily suppress the debug messages for one run (i.e. one call to HSM_Run()).  Simply call **HSM_SUPPRESS_DEBUG()** and pass the flags: __{HSM_SHOW_RUN, HSM_SHOW_TRAN, HSM_SHOW_INTACT, HSM_SHOW_ALL}__ to suppress debug for one run.  The original flags for **HSM_SET_DEBUG()** are restored for the next run
 
 3.2.3: HSM_DEBUG_EVT2STR
 When reviewing the debug logs, it is difficult to manually decode the encoded event values like this:

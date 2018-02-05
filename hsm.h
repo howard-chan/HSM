@@ -1,7 +1,7 @@
 /*
 The MIT License (MIT)
 
-Copyright (c) 2015-2017 Howard Chan
+Copyright (c) 2015-2018 Howard Chan
 https://github.com/howard-chan/HSM
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -97,30 +97,35 @@ extern "C" {
     // Below are the DEBUG options for HSM_SET_DEBUG(), HSM_SUPPRESS_DEBUG()
     #define HSM_SHOW_RUN                (1)
     #define HSM_SHOW_TRAN               (2)
-    #define HSM_SHOW_ALL                (HSM_SHOW_RUN | HSM_SHOW_TRAN)
+    #define HSM_SHOW_INTACT             (4)
+    #define HSM_SHOW_ALL                (HSM_SHOW_RUN | HSM_SHOW_TRAN | HSM_SHOW_INTACT)
 
     #if HSM_FEATURE_DEBUG_EMBEDDED
         // This section maybe customized for platform specific debug facilities
         // #include "your_embedded_DEBUG_OUT_here.h"
         #if HSM_FEATURE_DEBUG_NESTED_CALL
-            #define HSM_DEBUGC1(x, ...) { if (This->hsmDebug & HSM_SHOW_RUN) DEBUG_OUT(HSM_COLOR_BLU "%s%s" x HSM_COLOR_NON HSM_NEWLINE, apucHsmNestIndent[gucHsmNestLevel], This->prefix, __VA_ARGS__); }
-            #define HSM_DEBUGC2(x, ...) { if (This->hsmDebug & HSM_SHOW_TRAN) DEBUG_OUT(HSM_COLOR_CYN "%s%s" x HSM_COLOR_NON HSM_NEWLINE, apucHsmNestIndent[gucHsmNestLevel], This->prefix, __VA_ARGS__); }
+            #define HSM_DEBUGC1(x, ...) { if (This->hsmDebug & HSM_SHOW_RUN)    DEBUG_OUT(HSM_COLOR_BLU "%s%s" x HSM_COLOR_NON HSM_NEWLINE, apucHsmNestIndent[gucHsmNestLevel], This->prefix, __VA_ARGS__); }
+            #define HSM_DEBUGC2(x, ...) { if (This->hsmDebug & HSM_SHOW_TRAN)   DEBUG_OUT(HSM_COLOR_CYN "%s%s" x HSM_COLOR_NON HSM_NEWLINE, apucHsmNestIndent[gucHsmNestLevel], This->prefix, __VA_ARGS__); }
+            #define HSM_DEBUGC3(x, ...) { if (This->hsmDebug & HSM_SHOW_INTACT) DEBUG_OUT(HSM_COLOR_CYN "%s%s" x HSM_COLOR_NON HSM_NEWLINE, apucHsmNestIndent[gucHsmNestLevel], This->prefix, __VA_ARGS__); }
             #define HSM_DEBUG(...)  { DEBUG_OUT(__VA_ARGS__); }
         #else
-            #define HSM_DEBUGC1(x, ...) { if (This->hsmDebug & HSM_SHOW_RUN) DEBUG_OUT(HSM_COLOR_BLU "%s" x HSM_COLOR_NON HSM_NEWLINE, This->prefix, __VA_ARGS__); }
-            #define HSM_DEBUGC2(x, ...) { if (This->hsmDebug & HSM_SHOW_TRAN) DEBUG_OUT(HSM_COLOR_CYN "%s" x HSM_COLOR_NON HSM_NEWLINE, This->prefix, __VA_ARGS__); }
+            #define HSM_DEBUGC1(x, ...) { if (This->hsmDebug & HSM_SHOW_RUN)    DEBUG_OUT(HSM_COLOR_BLU "%s" x HSM_COLOR_NON HSM_NEWLINE, This->prefix, __VA_ARGS__); }
+            #define HSM_DEBUGC2(x, ...) { if (This->hsmDebug & HSM_SHOW_TRAN)   DEBUG_OUT(HSM_COLOR_CYN "%s" x HSM_COLOR_NON HSM_NEWLINE, This->prefix, __VA_ARGS__); }
+            #define HSM_DEBUGC3(x, ...) { if (This->hsmDebug & HSM_SHOW_INTACT) DEBUG_OUT(HSM_COLOR_CYN "%s" x HSM_COLOR_NON HSM_NEWLINE, This->prefix, __VA_ARGS__); }
             #define HSM_DEBUG(...)  { DEBUG_OUT(__VA_ARGS__); }
         #endif // HSM_FEATURE_DEBUG_NESTED_CALL
     #else
         // Using printf for DEBUG
         #include <stdio.h>
         #if HSM_FEATURE_DEBUG_NESTED_CALL
-            #define HSM_DEBUGC1(x, ...) { if (This->hsmDebug & HSM_SHOW_RUN) printf(HSM_COLOR_BLU "%s%s" x HSM_COLOR_NON HSM_NEWLINE, apucHsmNestIndent[gucHsmNestLevel], This->prefix, __VA_ARGS__); }
-            #define HSM_DEBUGC2(x, ...) { if (This->hsmDebug & HSM_SHOW_TRAN) printf(HSM_COLOR_CYN "%s%s" x HSM_COLOR_NON HSM_NEWLINE, apucHsmNestIndent[gucHsmNestLevel], This->prefix, __VA_ARGS__); }
+            #define HSM_DEBUGC1(x, ...) { if (This->hsmDebug & HSM_SHOW_RUN)    printf(HSM_COLOR_BLU "%s%s" x HSM_COLOR_NON HSM_NEWLINE, apucHsmNestIndent[gucHsmNestLevel], This->prefix, __VA_ARGS__); }
+            #define HSM_DEBUGC2(x, ...) { if (This->hsmDebug & HSM_SHOW_TRAN)   printf(HSM_COLOR_CYN "%s%s" x HSM_COLOR_NON HSM_NEWLINE, apucHsmNestIndent[gucHsmNestLevel], This->prefix, __VA_ARGS__); }
+            #define HSM_DEBUGC3(x, ...) { if (This->hsmDebug & HSM_SHOW_INTACT) printf(HSM_COLOR_CYN "%s%s" x HSM_COLOR_NON HSM_NEWLINE, apucHsmNestIndent[gucHsmNestLevel], This->prefix, __VA_ARGS__); }
             #define HSM_DEBUG(x, ...)  { printf(x HSM_NEWLINE, __VA_ARGS__); }
         #else
-            #define HSM_DEBUGC1(x, ...) { if (This->hsmDebug & HSM_SHOW_RUN) printf(HSM_COLOR_BLU "%s" x HSM_COLOR_NON HSM_NEWLINE, This->prefix, __VA_ARGS__); }
-            #define HSM_DEBUGC2(x, ...) { if (This->hsmDebug & HSM_SHOW_TRAN) printf(HSM_COLOR_CYN "%s" x HSM_COLOR_NON HSM_NEWLINE, This->prefix, __VA_ARGS__); }
+            #define HSM_DEBUGC1(x, ...) { if (This->hsmDebug & HSM_SHOW_RUN)    printf(HSM_COLOR_BLU "%s" x HSM_COLOR_NON HSM_NEWLINE, This->prefix, __VA_ARGS__); }
+            #define HSM_DEBUGC2(x, ...) { if (This->hsmDebug & HSM_SHOW_TRAN)   printf(HSM_COLOR_CYN "%s" x HSM_COLOR_NON HSM_NEWLINE, This->prefix, __VA_ARGS__); }
+            #define HSM_DEBUGC3(x, ...) { if (This->hsmDebug & HSM_SHOW_INTACT) printf(HSM_COLOR_CYN "%s" x HSM_COLOR_NON HSM_NEWLINE, This->prefix, __VA_ARGS__); }
             #define HSM_DEBUG(x, ...)  { printf(x HSM_NEWLINE, __VA_ARGS__); }
         #endif // HSM_FEATURE_DEBUG_NESTED_CALL
     #endif // HSM_FEATURE_DEBUG_EMBEDDED
@@ -130,6 +135,7 @@ extern "C" {
     #define HSM_GET_DEBUG(hsm)
     #define HSM_DEBUGC1(...)
     #define HSM_DEBUGC2(...)
+    #define HSM_DEBUGC3(...)
     #define HSM_DEBUG(...)
 #endif // HSM_FEATURE_DEBUG_ENABLE
 

@@ -1,7 +1,7 @@
 /*
 The MIT License (MIT)
 
-Copyright (c) 2015-2017 Howard Chan
+Copyright (c) 2015-2018 Howard Chan
 https://github.com/howard-chan/HSM
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -205,7 +205,7 @@ void HSM_Tran(HSM *This, HSM_STATE *nextState, void *param, void (*method)(HSM *
     for (idx = 0; idx < cnt_exit; idx++)
     {
         src = list_exit[idx];
-        HSM_DEBUGC2("  %s[%s](EXIT)", This->name, src->name);
+        HSM_DEBUGC3("  %s[%s](EXIT)", This->name, src->name);
         src->handler(This, HSME_EXIT, param);
     }
     // 3) Call the transitional method hook
@@ -217,7 +217,7 @@ void HSM_Tran(HSM *This, HSM_STATE *nextState, void *param, void (*method)(HSM *
     for (idx = 0; idx < cnt_entry; idx++)
     {
         dst = list_entry[cnt_entry - idx - 1];
-        HSM_DEBUGC2("  %s[%s](ENTRY)", This->name, dst->name);
+        HSM_DEBUGC3("  %s[%s](ENTRY)", This->name, dst->name);
         dst->handler(This, HSME_ENTRY, param);
     }
     // 5) Now we can set the destination state
@@ -227,7 +227,7 @@ void HSM_Tran(HSM *This, HSM_STATE *nextState, void *param, void (*method)(HSM *
 #endif // HSM_FEATURE_SAFETY_CHECK
 #if HSM_FEATURE_INIT
     // 6) Invoke INIT signal, NOTE: Only HSME_INIT can recursively call HSM_Tran()
-    HSM_DEBUGC2("  %s[%s](INIT)", This->name, nextState->name);
+    HSM_DEBUGC3("  %s[%s](INIT)", This->name, nextState->name);
     This->curState->handler(This, HSME_INIT, param);
 #endif // HSM_FEATURE_INIT
 }
