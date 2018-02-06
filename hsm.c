@@ -98,7 +98,7 @@ HSM_STATE *HSM_GetState(HSM *This)
 uint8_t HSM_IsInState(HSM *This, HSM_STATE *state)
 {
     HSM_STATE *curState;
-	// Travse the parents to find the matching state.
+    // Traverse the parents to find the matching state.
     for (curState = This->curState; curState; curState = curState->parent)
     {
         if (state == curState)

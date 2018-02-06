@@ -132,7 +132,8 @@ extern "C" {
 #else
     #define HSM_SET_PREFIX(hsm, preFix)
     #define HSM_SET_DEBUG(hsm, bEnable)
-    #define HSM_GET_DEBUG(hsm)
+    #define HSM_GET_DEBUG(hsm)  (0)
+    #define HSM_SUPPRESS_DEBUG(hsm, bmEnable)
     #define HSM_DEBUGC1(...)
     #define HSM_DEBUGC2(...)
     #define HSM_DEBUGC3(...)
