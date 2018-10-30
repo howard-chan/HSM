@@ -27,7 +27,7 @@ SOFTWARE.
 
 #if HSM_FEATURE_DEBUG_NESTED_CALL
 uint8_t gucHsmNestLevel;
-const char *apucHsmNestIndent[] = { "", "", "\t", "\t\t", "\t\t\t", "\t\t\t\t"};
+const char * const apucHsmNestIndent[] = { "", "", "\t", "\t\t", "\t\t\t", "\t\t\t\t"};
 #endif // HSM_FEATURE_DEBUG_NESTED_CALL
 
 HSM_EVENT HSM_RootHandler(HSM *This, HSM_EVENT event, void *param)
@@ -42,7 +42,7 @@ HSM_EVENT HSM_RootHandler(HSM *This, HSM_EVENT event, void *param)
     return HSME_NULL;
 }
 
-HSM_STATE HSM_ROOT =
+HSM_STATE const HSM_ROOT =
 {
     .parent = ((void *)0),
     .handler = HSM_RootHandler,
@@ -54,7 +54,7 @@ void HSM_STATE_Create(HSM_STATE *This, const char *name, HSM_FN handler, HSM_STA
 {
     if (((void *)0) == parent)
     {
-        parent = &HSM_ROOT;
+        parent = (HSM_STATE *)&HSM_ROOT;
     }
     This->name = name;
     This->handler = handler;

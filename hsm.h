@@ -34,7 +34,7 @@ extern "C" {
 
 //----HSM OPTIONAL FEATURES SECTION[BEGIN]----
 // Enable for HSM debugging
-#define HSM_FEATURE_DEBUG_ENABLE    1
+#define HSM_FEATURE_DEBUG_ENABLE            1
     // If HSM_FEATURE_DEBUG_ENABLE is defined, then select DEBUG OUT type
     //#define HSM_FEATURE_DEBUG_EMBEDDED
     // If HSM_FEATURE_DEBUG_ENABLE is defined, you can define HSM_DEBUG_EVT2STR for custom "event to string" function
@@ -45,15 +45,15 @@ extern "C" {
     //        (e.g. for gcc: "-DHSM_DEBUG_EVT2STR=HSM_Evt2Str")
     extern const char *HSM_Evt2Str(uint32_t event);
     // If HSM_FEATURE_DEBUG_ENABLE is defined, you can define HSM_FEATURE_DEBUG_COLOR to enable color print for color-aware terminals
-    #define HSM_FEATURE_DEBUG_COLOR 1
+    #define HSM_FEATURE_DEBUG_COLOR         1
     // If HSM_FEATURE_DEBUG_ENABLE is defined, debug messages are indented for each nested HSM_Run() call in a single threaded system
-    //#define HSM_FEATURE_DEBUG_NESTED_CALL
+    #define HSM_FEATURE_DEBUG_NESTED_CALL   1
     // Sets the newline for host (i.e. linux - "\n", windows - "\r\n")
-    #define HSM_NEWLINE         "\n"
+    #define HSM_NEWLINE                     "\n"
 // Enable safety checks.  Can be disabled after validating all states
-#define HSM_FEATURE_SAFETY_CHECK    1
+#define HSM_FEATURE_SAFETY_CHECK            1
 // Enable HSME_INIT Handling.  Can be disabled if no states handles HSME_INIT
-#define HSM_FEATURE_INIT            1
+#define HSM_FEATURE_INIT                    1
 //----HSM OPTIONAL FEATURES SECTION[END]----
 
 // Set the maximum nested levels
@@ -172,7 +172,7 @@ struct HSM_T
 //---- External Globals----
 #if HSM_FEATURE_DEBUG_NESTED_CALL
 extern uint8_t gucHsmNestLevel;
-extern const char *apucHsmNestIndent[];
+extern const char * const apucHsmNestIndent[];
 #endif // HSM_FEATURE_DEBUG_NESTED_CALL
 
 //----Function Declarations----

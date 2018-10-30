@@ -39,7 +39,7 @@ CFLAGS += -DHSM_DEBUG_EVT2STR=HSM_Evt2Str
 all: $(TARGET)
 
 $(TARGET): $(OBJ)
-	$(CC) -o $(TARGET) $^
+	$(CC) -Wl,-Map=$(TARGET).map -o $(TARGET) $^
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c -o $@ $<
@@ -51,4 +51,5 @@ $(TARGET): $(OBJ)
 clean:
 	rm -f *.o
 	rm -f *.d
-	rm $(TARGET)
+	rm -f *.map
+	rm -f $(TARGET)
