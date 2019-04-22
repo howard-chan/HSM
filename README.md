@@ -1,7 +1,7 @@
 /*
 The MIT License (MIT)
 
-Copyright (c) 2015-2018 Howard Chan
+Copyright (c) 2015-2019 Howard Chan
 https://github.com/howard-chan/HSM
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -27,20 +27,21 @@ SOFTWARE.
 HSM - Hierarchical State Machine
 ================================
 1. Overview
-2. Using HSM Framework  
-  2.1. Define the events and states  
-  2.2: Implement each of the state's event handler  
-  2.3: Create the HSM states and HSM instances  
-  2.4: Embed the HSM_Run() into your application  
-3. Using HSM Advance Features  
-  3.1. Basic Debug Features  
-  3.2. Advance Debug Features  
-  3.3. Optimization Features  
-4. HSM Cookbook and Design Patterns  
-  4.1. Make a transition decision on state entry, try using HSME_INIT  
-  4.2. Run Concurrent model (i.e. concurrent states), try using the parent state as a proxy  
-  4.3. Guard Condition, try using HSM_IsInState()  
-  4.4. Using child state as filter  
+2. Using HSM Framework
+  2.1. Define the events and states
+  2.2: Implement each of the state's event handler
+  2.3: Create the HSM states and HSM instances
+  2.4: Embed the HSM_Run() into your application
+3. Using HSM Advance Features
+  3.1. Basic Debug Features
+  3.2. Advance Debug Features
+  3.3. Optimization Features
+4. HSM Cookbook and Design Patterns
+  4.1. Make a transition decision on state entry, try using HSME_INIT
+  4.2. Run Concurrent model (i.e. concurrent states), try using the parent state as a proxy
+  4.3. Guard Condition, try using HSM_IsInState()
+  4.4. Using child state as filter
+5. Generating HSM code from PlantUML
 
 
 1. Overview:
@@ -72,16 +73,16 @@ MODE / LedOff()    MODE / LedOff()
 In this state machine, there are 2 events that are generated ("TIMER" and "MODE").  TIMER is a periodic event, while MODE is asynchronous event from the user.  In all states, the "MODE" event is handled and causes a transition that sets the LED output.  However the "TIMER" event is only handled in the "BlinkingOff" and "BlinkingOn" states, while ignored (i.e. filtered) in the "Off" and "On" state.
 
 Most state machines are flat (i.e. non-hierarchical) which is simple and easy to understand and implement.  When modeling / documenting the state machine on paper, it becomes increasing complex as the number of states and transitions increases.  At the same time, a large number of refactoring opportunities become apparent which is hard to realize in a flat state machine.  For example:
-  1. Multiple states handling same event - Some states will only differ slight but still needs to handle the same event in the same way.  
-  2. Large number of transitions - Similar to 1), an event resulting in a transition to a common state will also result in duplicating the handler.  
-  3. Setup and Teardown - Managing a setup and teardown is normally handled in the transition event.  This becomes difficult to maintain as the number of states and transitions increase  
-  4. Unhandled events - States will normally handle explicit events it was designed for.  These unexpected events can indicate a bug or misbehavior  
+  1. Multiple states handling same event - Some states will only differ slight but still needs to handle the same event in the same way.
+  2. Large number of transitions - Similar to 1), an event resulting in a transition to a common state will also result in duplicating the handler.
+  3. Setup and Teardown - Managing a setup and teardown is normally handled in the transition event.  This becomes difficult to maintain as the number of states and transitions increase
+  4. Unhandled events - States will normally handle explicit events it was designed for.  These unexpected events can indicate a bug or misbehavior
 
 Fortunately using a Hierarchical State Machine Model addresses the issues above:
-  1. Parent state - Common event handling in multiple states can be moved to the parent state.  Where the child state only handles differences in handling of the event.  Similar to Object-oriented practices.  
-  2. Parent Transition - Similar to 1), The parent state can manage common transitions out of the child state to a common state  
-  3. HSME_ENTRY and HSME_EXIT - These are built-in events that handle the Setup and Teardown events in a transition going from and into a state.  
-  4. Root Handler - All unhandled events get routed to the root handler which become detected.  
+  1. Parent state - Common event handling in multiple states can be moved to the parent state.  Where the child state only handles differences in handling of the event.  Similar to Object-oriented practices.
+  2. Parent Transition - Similar to 1), The parent state can manage common transitions out of the child state to a common state
+  3. HSME_ENTRY and HSME_EXIT - These are built-in events that handle the Setup and Teardown events in a transition going from and into a state.
+  4. Root Handler - All unhandled events get routed to the root handler which become detected.
 
 Rather than describe the HSM here, there are far better references and discussions on Unified Modeling Language (UML) and HSM that can be found on the internet.  So instead the next section shall describe how to use the HSM framework and how to implement / map your state machine model into code.
 
@@ -89,10 +90,10 @@ Rather than describe the HSM here, there are far better references and discussio
 2. Using HSM Framework:
 =======================
 After drawing your HSM model using the UML syntax, you have 4 basic steps:
-  1. Define the events and states  
-  2. Implement each of the state's event handler  
-  3. Create the HSM states and HSM instances  
-  4. Embed the HSM_Run() into your application  
+  1. Define the events and states
+  2. Implement each of the state's event handler
+  3. Create the HSM states and HSM instances
+  4. Embed the HSM_Run() into your application
 
 To simply the discussion of the HSM framework, I shall refer to the following example HSM state diagram that models a simple point and shoot camera.
 ```
@@ -226,7 +227,7 @@ For this section, we shall refer to the example Camera state "OnShoot":
 22  }
 ```
 2.2.1: Here we define the State Handler that is associated with the **HSM_STATE** object.  Each state handler must use the following prototype:
-> HSM_EVENT CAMERA_StateOnShootHndlr(HSM *This, HSM_EVENT event, void *param);  
+> HSM_EVENT CAMERA_StateOnShootHndlr(HSM *This, HSM_EVENT event, void *param);
 where:
   * **This**  - Pointer to the state machine instance.  Typecast to access derived class members
   * **event** - The enumerated HSM Events that maybe handled by this state as defined in section 2.1.2
@@ -238,7 +239,7 @@ where:
 *NOTE:* The event can be handled by the state and still pass/defer the event to the parent for common handling.
 
 2.2.3: If an event triggers a state transition, use the following API (SEE LINE 18):
-> void HSM_Tran(HSM *This, HSM_STATE *nextState, void *param, void (*method)(HSM *This, void *param))  
+> void HSM_Tran(HSM *This, HSM_STATE *nextState, void *param, void (*method)(HSM *This, void *param))
 where:
   * **This**      - Pointer to the state machine instance.
   * **nextState** - pointer to the state object of the next state as defined in section 2.1.4
@@ -255,7 +256,7 @@ where:
 2.3: Create the HSM states and HSM instances
 --------------------------------------------
 2.3.1: The state machine is defined by its states.  So with the HSM_STATE objects declared and their respective State handlers defined, the state objects and handlers need to be binded using the following API:
-> void HSM_STATE_Create(HSM_STATE *This, const char *name, HSM_FN handler, HSM_STATE *parent);  
+> void HSM_STATE_Create(HSM_STATE *This, const char *name, HSM_FN handler, HSM_STATE *parent);
 where:
   * **This**    - Pointer to state object as defined in section 2.1.4
   * **name**    - Name of State used in debug
@@ -273,7 +274,7 @@ For example using the Camera HSM Model in section 2, we can define the hierarchy
 ```
 
 2.3.2: There can be many instances of the state machine defined in 2.3.1 by declare HSM object and initialize the state machine instance using the following API:
-> void HSM_Create(HSM *This, const char *name, HSM_STATE *initState);  
+> void HSM_Create(HSM *This, const char *name, HSM_STATE *initState);
 where:
   * **This** - Pointer to the state machine object
   * **name** - Name of the state machine, Unique to this instance
