@@ -19,13 +19,23 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-realclean:
-	# Clean distribution
-	$(eval PROJLIST := $(shell find examples -name makefile))
-	$(info $(PROJLIST))
-	$(foreach proj,$(PROJLIST),$(shell make -C $(dir $(proj)) clean))
+#
+# Makefile for HSM example: Camera
+#
+# Step 1: Define the project parameters
+TARGET  = camera
+# Add this define to enable color debug in color-aware terminals
+DEFINES += -DHSM_COLOR_ENABLE
+# Add this define for customized HSM_EVENT value to string function for human readable debug
+DEFINES += -DHSM_DEBUG_EVT2STR=HSM_Evt2Str
 
-help:
-	@echo "Usage: make <target>"
-	@echo "Targers:"
-	@echo "  realclean          Cleans distribution"
+# Step 2: Define root
+ROOTDIR = ../..
+
+# Step 3: Define src and include path relative to the root
+SRCFILE = $(ROOTDIR)/examples/ex1/camera.c
+SRCDIR  = $(ROOTDIR)/src/c
+INCDIR  = $(SRCDIR)
+
+# Step 4: Include the common makefile to build project
+include $(ROOTDIR)/tools/common.mk

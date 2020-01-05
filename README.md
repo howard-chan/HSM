@@ -1,31 +1,28 @@
-/*
-The MIT License (MIT)
+> The MIT License (MIT)
+>
+> Copyright (c) 2015-2020 Howard Chan
+> https://github.com/howard-chan/HSM
+>
+> Permission is hereby granted, free of charge, to any person obtaining a copy
+> of this software and associated documentation files (the "Software"), to deal
+> in the Software without restriction, including without limitation the rights
+> to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+> copies of the Software, and to permit persons to whom the Software is
+> furnished to do so, subject to the following conditions:
+>
+> The above copyright notice and this permission notice shall be included in all
+> copies or substantial portions of the Software.
+>
+> THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+> IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+> FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+> AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+> LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+> OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+> SOFTWARE.
 
-Copyright (c) 2015-2019 Howard Chan
-https://github.com/howard-chan/HSM
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-*/
-
-================================
+--------------------------------
 HSM - Hierarchical State Machine
-================================
 1. Overview
 2. Using HSM Framework
   2.1. Define the events and states
@@ -44,8 +41,8 @@ HSM - Hierarchical State Machine
 5. Generating HSM code from PlantUML
 
 
-1. Overview:
-============
+--------------------------------
+# 1. Overview:
 Generally a state machine is a "black box" whose output is driven by an input "event" and its internal state.  Another way to look at a state machine is that of an event filter which will only act on "events" relevant to its internal state.  To Illustrate this concept, we would like to design an LED controlled by a "MODE" button that toggles between "Off" -> "On" -> "Blinking" and back to "Off".  The following flat state machine diagram is an example implementation of this LED.
 ```
             +-------------------------+
@@ -87,8 +84,8 @@ Fortunately using a Hierarchical State Machine Model addresses the issues above:
 Rather than describe the HSM here, there are far better references and discussions on Unified Modeling Language (UML) and HSM that can be found on the internet.  So instead the next section shall describe how to use the HSM framework and how to implement / map your state machine model into code.
 
 
-2. Using HSM Framework:
-=======================
+--------------------------------
+# 2. Using HSM Framework:
 After drawing your HSM model using the UML syntax, you have 4 basic steps:
   1. Define the events and states
   2. Implement each of the state's event handler
@@ -152,20 +149,22 @@ The camera is implemented using 6 states, 2 of which are parent states ("On" and
   * **OnDispMenu**: This is a child state where the Help Menu is displayed showing the status
 
 
-2.1: Define the events and states:
 ----------------------------------
-2.1.1: Create a new header that will define your HSM and include the "hsm.h" header
+## 2.1: Define the events and states:
+### 2.1.1: Create a new header that will define your HSM and include the "hsm.h" header
 ```C
     #include "hsm.h"
 ```
-2.1.2: Enumerate the HSM events (HSME) used by state machine.  HSME are normally 32-bit, but this can be changed to suit the platform.  The user-defined events can be any number as long as the following reserved values are not used (**HSME_NULL(0), HSME_INIT(-3), HSME_ENTRY(-2), HSME_EXIT(-1)**).  You can enumerate from the defined value HSME_START(1)
+### 2.1.2: Enumerate the HSM events (HSME) used by state machine.
+HSME are normally 32-bit, but this can be changed to suit the platform.  The user-defined events can be any number as long as the following reserved values are not used (**HSME_NULL(0), HSME_INIT(-3), HSME_ENTRY(-2), HSME_EXIT(-1)**).  You can enumerate from the defined value HSME_START(1)
 ```C
     #define HSME_PWR        (HSME_START)
     #define HSME_RELEASE    (HSME_START + 1)
     #define HSME_MODE       (HSME_START + 2)
     #define HSME_LOWBATT    (HSME_START + 3)
 ```
-2.1.3: Derive the state machine class by inheriting the HSM class.  In C, define the state machine with struct and declare the first member as parent of type HSM.  Add additonal members that are relevant to the state machine's context.  This shall be used to instantiate any number of state machines objects
+### 2.1.3: Derive the state machine class by inheriting the HSM class.
+In C, define the state machine with struct and declare the first member as parent of type HSM.  Add additonal members that are relevant to the state machine's context.  This shall be used to instantiate any number of state machines objects
 ```C
     typedef struct CAMERA_T
     {
@@ -177,7 +176,8 @@ The camera is implemented using 6 states, 2 of which are parent states ("On" and
         char param2;
     } CAMERA;
 ```
-2.1.4: Create a new source file and declare the singleton HSM_STATE objects for each state modeled in your UML State Diagram.  These state objects are later used to bind with the state handler and used for state transitions.
+### 2.1.4:
+Create a new source file and declare the singleton HSM_STATE objects for each state modeled in your UML State Diagram.  These state objects are later used to bind with the state handler and used for state transitions.
 ```C
     HSM_STATE CAMERA_StateOff;
     HSM_STATE CAMERA_StateOn;
@@ -187,8 +187,8 @@ The camera is implemented using 6 states, 2 of which are parent states ("On" and
     HSM_STATE CAMERA_StateOnDispMenu;
 ```
 
-2.2: Implement each of the state's event handler
 ------------------------------------------------
+## 2.2: Implement each of the state's event handler
 For this section, we shall refer to the example Camera state "OnShoot":
 ```
                  @
@@ -226,19 +226,22 @@ For this section, we shall refer to the example Camera state "OnShoot":
 21      return event;
 22  }
 ```
-2.2.1: Here we define the State Handler that is associated with the **HSM_STATE** object.  Each state handler must use the following prototype:
+### 2.2.1:
+Define the State Handler that is associated with the **HSM_STATE** object.  Each state handler must use the following prototype:
 > HSM_EVENT CAMERA_StateOnShootHndlr(HSM *This, HSM_EVENT event, void *param);
 where:
   * **This**  - Pointer to the state machine instance.  Typecast to access derived class members
   * **event** - The enumerated HSM Events that maybe handled by this state as defined in section 2.1.2
   * **param** - [Optional] argument associated with the event
 
-2.2.2: When events are sent to the state machine (via HSM_Run(...)), the current state handler will be passed with the "event" and "param" which the state handler will perform some action to AND then perform one of the following:
+### 2.2.2:
+When events are sent to the state machine (via HSM_Run(...)), the current state handler will be passed with the "event" and "param" which the state handler will perform some action to AND then perform one of the following:
   * Consume the the event and returning NULL(0) (SEE LINE 14 and LINE 19)
   * Or pass it to the parent state by returning the event (SEE LINE 21)
 *NOTE:* The event can be handled by the state and still pass/defer the event to the parent for common handling.
 
-2.2.3: If an event triggers a state transition, use the following API (SEE LINE 18):
+### 2.2.3:
+If an event triggers a state transition, use the following API (SEE LINE 18):
 > void HSM_Tran(HSM *This, HSM_STATE *nextState, void *param, void (*method)(HSM *This, void *param))
 where:
   * **This**      - Pointer to the state machine instance.
@@ -247,15 +250,17 @@ where:
   * **method**    - A callback for lamda like functions which is invoked after all HSME_ENTRY events and before any HSME_EXIT events
 *NOTE:* The HSM_Tran(...) API will generate HSME_EXIT events to all exiting states (e.g. OnShoot) up to a common parent, invoke the "method" callback if set, generate HSME_ENTRY events to the entered states (e.g. OnDisp and OnDispPlay) from the common parent and then finally generate HSME_INIT event to the final state
 
-2.2.4: Implement the optional handling of the HSME_ENTRY, HSME_EXIT, and/or HSME_INIT events as required by your HSM State Diagram.  These events are generated by the HSM framework on state transition.  It is not necessary to consume these events as the framework will never pass these to the parent state.  The following is a description of the Framework generated events:
+### 2.2.4:
+Implement the optional handling of the HSME_ENTRY, HSME_EXIT, and/or HSME_INIT events as required by your HSM State Diagram.  These events are generated by the HSM framework on state transition.  It is not necessary to consume these events as the framework will never pass these to the parent state.  The following is a description of the Framework generated events:
   1. **HSME_ENTRY** - Used to trigger any SETUP required on entry to the state (SEE LINE 3)
   2. **HSME_EXIT** - Used to trigger any TEARDOWN required on exit from the state (SEE LINE 7)
   3. **HSME_INIT** - This event is generated after all HSME_ENTRY and HSME_EXIT have been handled and state has been set to the new state.  This is normally used to trigger another transition that is dependent on some guard condition (i.e. depends on some state machine context)
 
 
-2.3: Create the HSM states and HSM instances
 --------------------------------------------
-2.3.1: The state machine is defined by its states.  So with the HSM_STATE objects declared and their respective State handlers defined, the state objects and handlers need to be binded using the following API:
+## 2.3: Create the HSM states and HSM instances
+### 2.3.1:
+The state machine is defined by its states.  So with the HSM_STATE objects declared and their respective State handlers defined, the state objects and handlers need to be binded using the following API:
 > void HSM_STATE_Create(HSM_STATE *This, const char *name, HSM_FN handler, HSM_STATE *parent);
 where:
   * **This**    - Pointer to state object as defined in section 2.1.4
@@ -273,7 +278,8 @@ For example using the Camera HSM Model in section 2, we can define the hierarchy
     HSM_STATE_Create(&CAMERA_StateOnDispMenu, "On.Disp.Menu", CAMERA_StateOnDispMenuHndlr, &CAMERA_StateOnDisp);
 ```
 
-2.3.2: There can be many instances of the state machine defined in 2.3.1 by declare HSM object and initialize the state machine instance using the following API:
+### 2.3.2:
+There can be many instances of the state machine defined in 2.3.1 by declare HSM object and initialize the state machine instance using the following API:
 > void HSM_Create(HSM *This, const char *name, HSM_STATE *initState);
 where:
   * **This** - Pointer to the state machine object
@@ -288,8 +294,8 @@ For example:
 This will set the state machine state to CAMERA_StateOff and generate the HSME_ENTRY and HSME_INIT event to this state
 
 
-2.4: Embed the HSM_Run() into your application
 ----------------------------------------------
+## 2.4: Embed the HSM_Run() into your application
 Running the HSM is as simple as calling the _HSM_Run()_ API and passing the HSM object along with the "event" and optional "param".  It is up to the state handler to decide what to do with the event and param.  There are no global variables except in one case (SEE 3.1.2), so all of the functions in the HSM framework are re-entrant.
 
 A typical use is servicing an event by simply feeding the enumerated event and optional parameter to the HSM object.
@@ -309,12 +315,12 @@ Will generate the following logs (assuming debug is enabled):
     [DBG]   Canon[On](INIT)
 ```
 
-3. Using HSM Advance Features:
-==============================
+-------------------------
+# 3. Using HSM Advance Features:
 This HSM Framework provides numerous configurable options to control the level of debug as well optimize for memory constrained systems.  All of these features are configured in hsm.h
 
-3.1. Basic Debug Features
 -------------------------
+## 3.1. Basic Debug Features
 It can be difficult to debug the HSM without any type of logging, so it is highly recommended to develop with the debug features on and then disable them in production.  Be sure to run the camera demo to get a feel for the debugging capabilities and the HSM framework.  To enable debugging:
   1. Enable the compiler flag **HSM_FEATURE_DEBUG_ENABLE** to compile in the HSM debug logging features
   2. If the system does not have _printf(...)_ available, then enable the compiler flag **HSM_FEATURE_DEBUG_EMBEDDED** and implement application specific **DEBUG_OUT(...)**
@@ -326,11 +332,11 @@ It can be difficult to debug the HSM without any type of logging, so it is highl
     * HSM_SHOW_INTACT - Only shows the internal action logging (i.e. HSM_ENTRY, HSM_EXIT, HSME_INIT) from calls to HSM_Tran()
     * HSM_SHOW_ALL - Shows all logging
 
-3.2 Advance Debug Features
 --------------------------
+## 3.2 Advance Debug Features
 These feature are only supported if **HSM_FEATURE_DEBUG_ENABLE** is enabled
 
-3.2.1: HSM_SET_PREFIX
+### 3.2.1: HSM_SET_PREFIX
 Each state machine instance can have its own prefix which is commonly used to filter the HSM debug messages with grep
 For example, using **HSM_SET_PREFIX((HSM *)This, "[DBG] ")**
 ```
@@ -340,10 +346,10 @@ For example, using **HSM_SET_PREFIX((HSM *)This, "[DBG] ")**
         Beep low battery warning
 ```
 
-3.2.2: HSM_SUPPRESS_DEBUG
+### 3.2.2: HSM_SUPPRESS_DEBUG
 Some state machines can generate a large number of periodic events which generates a lot of noise in the debug logs.  So it is often desireable to momentarily suppress the debug messages for one run (i.e. one call to HSM_Run()).  Simply call **HSM_SUPPRESS_DEBUG()** and pass the flags: __{HSM_SHOW_RUN, HSM_SHOW_TRAN, HSM_SHOW_INTACT, HSM_SHOW_ALL}__ to suppress debug for one run.  The original flags for **HSM_SET_DEBUG()** are restored for the next run
 
-3.2.3: HSM_DEBUG_EVT2STR
+### 3.2.3: HSM_DEBUG_EVT2STR
 When reviewing the debug logs, it is difficult to manually decode the encoded event values like this:
 ```
     [DBG] Run Canon[On.Disp.Menu](evt:4, param:00000000)
@@ -380,7 +386,7 @@ Then in the makefile define HSM_DEBUG_EVT2STR to the above function:
     CFLAGS += -DHSM_DEBUG_EVT2STR=HSM_Evt2Str
 ```
 
-3.2.4: HSM_FEATURE_DEBUG_NESTED_CALL
+### 3.2.4: HSM_FEATURE_DEBUG_NESTED_CALL
 This is a special debug feature that is useful for constrained systems that have multiple running HSM instances operating in a single thread.  This necessitates calling the _HSM_Run()_ from within the state handler (i.e. nesting the HSM) which makes debugging confusing (i.e. interleaved debug logs).
 
 To eliminate the confusion, you can enable the flag **HSM_FEATURE_DEBUG_NESTED_CALL** which will indent the output by the number of nesting levels.  However there is one caveat, this will make calls to _HSM_Run()_ non-reentrant as a global will need to be defined to tracked the nesting levels which isn't really a penalty.
@@ -390,24 +396,23 @@ It is important to note that the global **apucHsmNestIndent[]** may need to exte
     const char *apucHsmNestIndent[] = { "", "", "\t", "\t\t", "\t\t\t", "\t\t\t\t"};
 ```
 
-3.3: Optimization Features
 --------------------------
+## 3.3: Optimization Features
 The following features can be configure to decrease the memory footprint and decrease the latency and should only be disabled for a system that has been well tested, else debugging can be difficult
 
-3.3.1: HSM_FEATURE_SAFETY_CHECK
+### 3.3.1: HSM_FEATURE_SAFETY_CHECK
 Enabling this feature performs sanity checks on the state handler performing illegal calls which result in erroneous behavior.  This can be disabled in production after full regression testing to save just a little memory and latency
 
-3.3.2: HSM_FEATURE_INIT
+### 3.3.2: HSM_FEATURE_INIT
 Enabling this feature enables generation of the HSME_INIT event during a call to HSM_Tran() from the state handler.  If you do not use the HSME_INIT in your UML state diagram, you can disable this feature to save a little memory and improve latency
 
-3.3.3: HSM_MAX_DEPTH
+### 3.3.3: HSM_MAX_DEPTH
 This is a configurable value for the maximum depth (i.e. nesting) of states you are designing.  HSM_Tran() uses this value to allocate the memory required to performs a run-time trace of the state ancestry.  HSM_STATE_Create() shall assert if the state creation exceeds the maximum depth, in which case you should either redesign your HSM or increase this value (Default is 5)
 
-
-4. HSM Cookbook and Design Patterns:
-====================================
-4.1: Make a transition decision on state entry, try using HSME_INIT
+--------------------------
+# 4. HSM Cookbook and Design Patterns:
 -------------------------------------------------------------------
+## 4.1: Make a transition decision on state entry, try using HSME_INIT
 Normally when we enter a state, there is some SETUP operation (initiated by HSME_ENTRY) that may fail (e.g allocating memory) which would cause the system to fail if allowed to continue.  In this case, we should take a course of action such as changing to another state.
 
 To illustrate, we shall use our camera model again where we need to handle the case where the camera lens fails to open (e.g. its obstructed or jammed).  In this case we should go back to the Off state to prevent further damage.
@@ -471,14 +476,48 @@ Here we check if the lens is open successfully.  If its not, then we can transit
 ```
 **NOTE!!** It is illegal to invoke a HSM_Tran() for the HSME_ENTRY and HSME_EXIT event, since this would create a recursion in HSM_Tran().  Thus only HSM_Tran() can only be invoked by user event or HSME_INIT.
 
-4.2. Run Concurrent model (i.e. concurrent states), try using the parent state as a proxy
 -----------------------------------------------------------------------------------------
+## 4.2. Run Concurrent model (i.e. concurrent states), try using the parent state as a proxy
 TODO
 
-4.3. Guard Condition, try using HSM_IsInState()
 -----------------------------------------------
+## 4.3. Guard Condition, try using HSM_IsInState()
 TODO
 
-4.4. Using child state as filter
 --------------------------------
+## 4.4. Using child state as filter
 TODO
+
+--------------------------------
+## 5. Camera Example
+```puml
+[*] -> Off
+state Off : entry / EnterLowPower();
+state Off : exit / ExitLowPower();
+Off --> On : PWR_CMD
+On --> Off : PWR_CMD
+state On : entry / OpenLens();
+state On : exit / CloseLens();
+state On : LOWBATT_EVT / BeepLowBattWarning();
+state On {
+    note top of OnShoot
+        A note can also
+        be defined on
+        several lines
+    end note
+    [*] --> OnShoot
+    state OnShoot : entry / \n  EnableSensor();\n  OpenViewFinder();
+    state OnShoot : exit / \n   DisableSensor();\n  CloseViewFinder();
+    state OnShoot : RELEASE [param > 0] / \n  TakePicture();\n  SaveImage();
+    state OnShoot : RELEASE [param == 0] / MemoryFull();
+    state OnDisplay : entry / \n  TurnOnLCD();
+    state OnDisplay : exit / TurnOffLCD();
+    state OnDisplay {
+        state OnDisplayPlay : entry / DisplayPicture();
+        OnDisplayPlay -> OnDisplayMenu : MODE_CMD
+        state OnDisplayMenu : entry / DisplayMenu();
+        OnDisplayMenu -> OnShoot : MODE_CMD
+        OnShoot -> OnDisplayPlay : MODE_CMD
+    }
+}
+```

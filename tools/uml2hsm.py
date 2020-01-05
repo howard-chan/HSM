@@ -2,7 +2,7 @@
 """
 The MIT License (MIT)
 
-Copyright (c) 2015-2019 Howard Chan
+Copyright (c) 2015-2020 Howard Chan
 https://github.com/howard-chan/HSM
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -164,7 +164,7 @@ class Uml2Hsm:
         """
         # list of supported languages
         self.supportedLang = { 'c' : Uml2Hsm._genHsmC, 'c++' : Uml2Hsm._genHsmCpp,
-                               'python' : Uml2Hsm._genHsmPy, 'puml' : Uml2Hsm._genPlantUML }
+                               'python' : Uml2Hsm._genHsmPy, 'puml' : Uml2Hsm._genHsmPUML }
         if lang not in self.supportedLang.keys():
             raise 'Language {} is not supported'.format(lang)
         self.lang = lang
@@ -376,7 +376,7 @@ class Uml2Hsm:
         @brief      Generate "C" implementation of HSM
 
         @param      self  The object
-        @param      hsm   The hsm
+        @param      hsm   The hsm model
         @param      out   output file
         """
         # Table for replacing PlantUML events with HSM "C" defines
@@ -554,8 +554,69 @@ class Uml2Hsm:
     def _genHsmPy(self, hsm, out):
         pass
 
-    def _genPlantUML(self, hsm, out):
-        pass
+    def _genHsmPUML(self, hsm, out):
+        """
+        @brief      Generate PlantUML code
+
+        @param      self  The object
+        @param      hsm   The hsm model
+        @param      out   The output file
+        """
+        # Helper lambdas
+        indent = lambda x:" "*TAB_SIZE*x
+        stateObjTmpl = lambda state:'{}_State{}'.format(hsm['name'],state)
+        # Build the state tree
+        stateTree = OrderedDict()
+        for state in hsm['state']:
+            parent = hsm['state'][state]["parent"]
+            if parent not in stateTree:
+                stateTree[parent] = [state]
+            else:
+                stateTree[parent].append(state)
+        if self.debug:
+            print("StateTree: {}".format(stateTree))
+
+        # Build the BFS list for nesting the states in PlantUML
+        bfsList = []
+        stateFifo = [None]
+        for state in stateFifo:
+            pass
+
+        #---Generate Header File---
+        out.write("```puml\n")
+        out.write('\n@startuml {}_hsm.png\n'.format(hsm['name']))
+        out.write('title {}\n'.format(hsm['name']))
+        out.write('hide empty description\n\n')
+        # Set the HSM initial state
+        if hsm['init']:
+            out.write('[*] -> {}\n'.format(hsm['init']))
+
+        # Add States with events using BFS
+        nextLvlList = []
+        childList = stateTree[None]
+        lvl = 0
+        for state in childList:
+            for event, guardList in hsm['state'][state]["event"].items():
+                for guard, actTran in guardList.items():
+                    action, trans = actTran
+                    # Check if this states contains a transition
+                    if trans:
+                        if event == 'init':
+                            #TODO: Need to check if the state is already added before entering
+                            out.write("{}[*] -> {}{}".format(indent(lvl), trans, ' :' if guard else ''))
+                        else:
+                            #TODO: Need to check if the state is already added before entering
+                            out.write("{}{} -> {} : {}".format(indent(lvl), state, trans, event))
+                    else:
+                        out.write("{}state {} : {} ".format(indent(lvl), state, event))
+                    if guard:
+                        out.write("[{}] ".format(guard))
+                    if action:
+                        out.write("/ {}".format(action))
+                    out.write("\n".format())
+
+        out.write('@enduml\n')
+        out.write("```\n")
 
     def genHsm(self, outfile=None, hsmIdx=0):
         try:
@@ -566,9 +627,6 @@ class Uml2Hsm:
                 print(out.getvalue())
         finally:
             out.close()
-
-    def genUml(self, outfile=None):
-        pass
 
 
 def main(args):
@@ -598,10 +656,7 @@ def main(args):
             print("{}".format(json.dumps(hsm, indent=4)))
 
     # Generate the output
-    if not args.reverse:
-        uml2c.genHsm(args.output)
-    else:
-        uml2c.genUml(args.output)
+    uml2c.genHsm(args.output)
 
 
 if __name__ == "__main__":
