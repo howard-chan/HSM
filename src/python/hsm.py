@@ -29,6 +29,7 @@ SOFTWARE.
 class HSM_Event:
     INIT, ENTRY, EXIT, FIRST = range(1, 5)
 
+
 class HSM(object):
     class State:
         """This is a state class used internally"""
@@ -41,12 +42,12 @@ class HSM(object):
             if isinstance(parent, HSM.State):
                 self.level = parent.level + 1
             elif parent != None:
-                print "Raise exception here: The parent is not a State"
+                print("Raise exception here: The parent is not a State")
                 raise "Raise exception here: The parent is not a State"
 
     def __RootHandler(self, event):
-        print "\tUnhandled event:%s %s[%s]" % (event, self.name, self.curState)
-        raise "Unhandled event"
+        print("\tUnhandled event:%s %s[%s]" % (event, self.name, self.curState))
+        # raise "Unhandled event"
         return None
 
     def __init__(self, name=""):
@@ -67,7 +68,7 @@ class HSM(object):
         if isinstance(initState, self.State):
             self.curState = initState
         else:
-            print "This is not a HSM State"
+            print("This is not a HSM State")
 
     def GetState(self):
         """This returns the current HSM state"""
@@ -79,18 +80,18 @@ class HSM(object):
         state = self.curState
         if self.hsmDebug:
             pass
-            print "Run %s[%s](evt:%s)" % (self.name, state.name, event)
+            print("Run %s[%s](evt:%s)" % (self.name, state.name, event))
         while event:
             event = state.handler(event)
             state = state.parent
             if self.hsmDebug and event:
-                print "  evt:%s unhandled, passing to %s[%s]" % (event, self.name, state.name)
+                print("  evt:%s unhandled, passing to %s[%s]" % (event, self.name, state.name))
 
     def Tran(self, nextState, method = None):
         """This performs the state transition with calls of exit, entry and init
         Bulk of the work handles the exit and entry event during transitions"""
         if self.hsmDebug:
-            print "Tran %s[%s -> %s]" % (self.name, self.curState.name, nextState.name)
+            print("Tran %s[%s -> %s]" % (self.name, self.curState.name, nextState.name))
         # 1) Find the lowest common parent state
         src = self.curState
         dst = nextState
@@ -116,7 +117,7 @@ class HSM(object):
         #TODO: Add check to ensure "Tran()" not called on exit
         for src in list_exit:
             if self.hsmDebug:
-                print "  %s[%s](%s)" % (self.name, src.name, "EXIT")
+                print("  %s[%s](%s)" % (self.name, src.name, "EXIT"))
             src.handler(HSM_Event.EXIT)
         # 3) Call the transitional method
         if method and hasattr(method, '__call__'):
@@ -125,11 +126,11 @@ class HSM(object):
         #TODO: Add check to ensure "Tran()" not called on entry
         for dst in list_entry:
             if self.hsmDebug:
-                print "  %s[%s](%s)" % (self.name, dst.name, "ENTRY")
+                print("  %s[%s](%s)" % (self.name, dst.name, "ENTRY"))
             dst.handler(HSM_Event.ENTRY)
         #5) Now we can set the destination state
         self.curState = nextState
         #6) Invoke INIT signal
         if self.hsmDebug:
-            print "  %s[%s](%s)" % (self.name, nextState.name, "INIT")
+            print("  %s[%s](%s)" % (self.name, nextState.name, "INIT"))
         self.curState.handler(HSM_Event.INIT)

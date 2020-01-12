@@ -155,12 +155,12 @@ void HSM_Run(HSM *This, HSM_EVENT event, void *pvParam)
             pcEvtStr = This->pfnEvt2Str(event);
             if (pcEvtStr)
             {
-                HSM_DEBUGC1("  Pass to %s[%s](evt:%s, param:%#lx)", This->pcName, state->pcName, pcEvtStr, (unsigned long)pvParam);
+                HSM_DEBUGC1("  evt:%s unhandled, passing to %s[%s]", pcEvtStr, This->pcName, state->pcName);
             }
             else
 #endif // HSM_DEBUG_EVT2STR
             {
-                HSM_DEBUGC1("  Pass to %s[%s](evt:%#lx, param:%#lx)", This->pcName, state->pcName, (unsigned long)event, (unsigned long)pvParam);
+                HSM_DEBUGC1("  evt:%lx unhandled, passing to %s[%s]", (unsigned long)event, This->pcName, state->pcName);
             }
         }
     }

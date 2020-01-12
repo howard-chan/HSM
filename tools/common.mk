@@ -20,7 +20,7 @@
 # SOFTWARE.
 
 # To use common.mk, define the following variables to your makefile
-# 
+#
 # Step 1: The caller makefile MUST have the following variables defined
 #   $(TARGET):      Target binary name (i.e. executable)
 #   $(ROOTDIR):     Root path of the repo source relative to project makefile
@@ -64,12 +64,13 @@ OBJ         += $(patsubst $(SRCPATH)/%,$(BINDIR)/%,$(addsuffix .o,$(basename $(S
 # The targets
 #
 .PHONY: default all clean
+.SECONDARY:
 
 # Builds the target
 default all: $(TARGET)
 
 # Cleans the build directory
-clean:
+clean::
 	rm -rf $(BINDIR)
 
 # For debug, Usage: "make print-<Makefile.Variable.To.Inspect>"

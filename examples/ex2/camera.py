@@ -22,6 +22,9 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
+import sys, os
+sys.path.append(os.path.abspath('../../src/python'))
+
 from hsm import HSM
 from hsm import HSM_Event
 
@@ -68,9 +71,9 @@ class Camera(HSM):
 
     def StateOffHndlr(self, event):
         if event == evt.ENTRY:
-            print "\tEnter Low Power Mode"
+            print("\tEnter Low Power Mode")
         elif event == evt.EXIT:
-            print "\tExit Low Power Mode"
+            print("\tExit Low Power Mode")
         elif event == evt.PWR:
             self.Tran(self.stateOn)
             return None
@@ -78,26 +81,26 @@ class Camera(HSM):
 
     def StateOnHndlr(self, event):
         if event == evt.ENTRY:
-            print "\tOpen Lens"
+            print("\tOpen Lens")
         elif event == evt.EXIT:
-            print "\tClose Lens"
+            print("\tClose Lens")
         elif event == evt.INIT:
             self.Tran(self.stateOnShoot)
         elif event == evt.PWR:
             self.Tran(self.stateOff)
             return None
         elif event == evt.LOWBATT:
-            print "\tBeep low battery warning"
+            print("\tBeep low battery warning")
             return None
         return event
 
     def StateOnShootHndlr(self, event):
         if event == evt.ENTRY:
-            print "\tEnable Sensor"
+            print("\tEnable Sensor")
         elif event == evt.EXIT:
-            print "\tDisable Sensor"
+            print("\tDisable Sensor")
         elif event == evt.RELEASE:
-            print "\tCLICK!, save photo"
+            print("\tCLICK!, save photo")
             return None
         elif event == evt.MODE:
             self.Tran(self.stateOnDispPlay)
@@ -106,14 +109,14 @@ class Camera(HSM):
 
     def StateOnDispHndlr(self, event):
         if event == evt.ENTRY:
-            print "\tTurn on LCD"
+            print("\tTurn on LCD")
         elif event == evt.EXIT:
-            print "\tTurn off LCD"
+            print("\tTurn off LCD")
         return event
 
     def StateOnDispPlayHndlr(self, event):
         if event == evt.ENTRY:
-            print "\tDisplay Pictures"
+            print("\tDisplay Pictures")
         elif event == evt.MODE:
             self.Tran(self.stateOnDispMenu)
             return None
@@ -121,7 +124,7 @@ class Camera(HSM):
 
     def StateOnDispMenuHndlr(self, event):
         if event == evt.ENTRY:
-            print "\tDisplay Menu"
+            print("\tDisplay Menu")
         elif event == evt.MODE:
             self.Tran(self.stateOnShoot)
             return None
