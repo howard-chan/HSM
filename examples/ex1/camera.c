@@ -20,15 +20,15 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
-#include "hsm.h"
 #include <stdio.h>
+
+#include "hsm.h"
 
 // Camera HSM Events
 #define HSME_PWR        (HSME_START)
 #define HSME_RELEASE    (HSME_START + 1)
 #define HSME_MODE       (HSME_START + 2)
 #define HSME_LOWBATT    (HSME_START + 3)
-
 
 typedef struct CAMERA_T
 {

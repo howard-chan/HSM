@@ -24,23 +24,200 @@ SOFTWARE.
 */
 
 #include <iostream>
-#include <string>
 
 #include "hsm.hpp"
 
 using namespace std;
 
-class Camera : public Hsm 
-{
-private:
+// Camera HSM Events
+#define HSME_PWR        (HSME_START)
+#define HSME_RELEASE    (HSME_START + 1)
+#define HSME_MODE       (HSME_START + 2)
+#define HSME_LOWBATT    (HSME_START + 3)
+
+class Camera : public Hsm {
+   /*
+    Class that implements the Camera HSM and inherits from the HSM class
+    Creating a HSM requires the following steps:
+        1) Initialize the base HSM class
+        2) Define the HSM states hierarchy
+        3) Set the starting state
+        4) Define the state handlers
+            a) State handler must return "None" if the event IS handled
+            b) State handler must return "event" if the event IS NOT handled
+            c) State handler may handle the ENTRY event for state setup
+            d) State handler may handle the EXIT event for state teardown/cleanup
+            e) State handler may handle the INIT for self transition to child state
+            f) Self transition to child state MUST NOT be handled by ENTRY or EXIT event
+            g) Events ENTRY, EXIT and INIT do no need to return None for brevity
+    */
+
+    // Declare HSM States here:
+    HsmState stateOff;
+    HsmState stateOn;
+    HsmState stateOnShoot;
+    HsmState stateOnDisp;
+    HsmState stateOnDispPlay;
+    HsmState stateOnDispMenu;
+
+    // Declare member variables
+    int m_shots;
+
+    // Define the "static" state handlers here
+    static hsm_event_t stateOff_handler(Hsm *pxHsm, hsm_event_t xEvent, void *pvParam) {
+        Camera &camera = *static_cast<Camera *>(pxHsm);
+        switch (xEvent)
+        {
+        case HSME_ENTRY:
+            cout << "\tEnter Lower Power Mode" << endl;
+            return 0;
+
+        case HSME_EXIT:
+            cout << "\tExit Lower Power Mode" << endl;
+            return 0;
+
+        case HSME_PWR:
+            camera.tran(&camera.stateOn);
+            return 0;
+        }
+        return xEvent;
+    }
+
+    static hsm_event_t stateOn_handler(Hsm *pxHsm, hsm_event_t xEvent, void *pvParam) {
+        Camera &camera = *static_cast<Camera *>(pxHsm);
+        switch (xEvent)
+        {
+        case HSME_ENTRY:
+            cout << "\tOpen Lens" << endl;
+            return 0;
+
+        case HSME_EXIT:
+            cout << "\tClose Lens" << endl;
+            return 0;
+
+        case HSME_INIT:
+            camera.tran(&camera.stateOnShoot);
+            return 0;
+
+        case HSME_PWR:
+            camera.tran(&camera.stateOff);
+            return 0;
+
+        case HSME_LOWBATT:
+            cout << "\tBeep low battery warning" << endl;
+            return 0;
+        }
+        return xEvent;
+    }
+
+    static hsm_event_t stateOnShoot_handler(Hsm *pxHsm, hsm_event_t xEvent, void *pvParam) {
+        Camera &camera = *static_cast<Camera *>(pxHsm);
+        switch (xEvent)
+        {
+        case HSME_ENTRY:
+            cout << "\tEnable Sensor" << endl;
+            return 0;
+
+        case HSME_EXIT:
+            cout << "\tDisable Sensor" << endl;
+            return 0;
+
+        case HSME_RELEASE:
+            cout << "\tCLICK!, save photo #" << ++camera.m_shots << endl;
+            return 0;
+
+        case HSME_MODE:
+            camera.tran(&camera.stateOnDispPlay);
+            return 0;
+        }
+        return xEvent;
+    }
+
+    static hsm_event_t stateOnDisp_handler(Hsm *pxHsm, hsm_event_t xEvent, void *pvParam) {
+        Camera &camera = *static_cast<Camera *>(pxHsm);
+        switch (xEvent)
+        {
+        case HSME_ENTRY:
+            cout << "\tTurn on LCD" << endl;
+            return 0;
+
+        case HSME_EXIT:
+            cout << "\tTurn off LCD" << endl;
+            return 0;
+        }
+        return xEvent;
+    }
+
+    static hsm_event_t stateOnDispPlay_handler(Hsm *pxHsm, hsm_event_t xEvent, void *pvParam) {
+        Camera &camera = *static_cast<Camera *>(pxHsm);
+        switch (xEvent)
+        {
+        case HSME_ENTRY:
+            cout << "\tDisplay " << camera.m_shots << " pictures" << endl;
+            return 0;
+
+        case HSME_MODE:
+            camera.tran(&camera.stateOnDispMenu);
+            return 0;
+        }
+        return xEvent;
+    }
+
+    static hsm_event_t stateOnDispMenu_handler(Hsm *pxHsm, hsm_event_t xEvent, void *pvParam) {
+        Camera &camera = *static_cast<Camera *>(pxHsm);
+        switch (xEvent)
+        {
+        case HSME_ENTRY:
+            cout << "\tDisplay Menu" << endl;
+            return 0;
+
+        case HSME_MODE:
+            camera.tran(&camera.stateOnShoot);
+            return 0;
+        }
+        return xEvent;
+    }
 
 public:
-	Camera(string name) : Hsm(name) {};
+    Camera(const char *pcName) :
+        // Step 1: Create the HSM States
+        stateOff("Off", stateOff_handler),
+        stateOn("On", stateOn_handler),
+        stateOnShoot("On.Shoot", stateOnShoot_handler, &stateOn),
+        stateOnDisp("On.Disp", stateOnDisp_handler, &stateOn),
+        stateOnDispPlay("On.Disp.Play", stateOnDispPlay_handler, &stateOnDisp),
+        stateOnDispMenu("On.Disp.Menu", stateOnDispMenu_handler, &stateOnDisp),
+        // Step 2: Initiailize the HSM and starting state
+        Hsm(pcName, &stateOff),
+        m_shots{0}
+    {
+        // Step 3: [Optional] Enable HSM debug
+        setPrefix("[DBG] ");
+        setDebug(HSM_SHOW_ALL);
+        // Set the initial state
+        setInitState(&stateOff);
+    }
 };
+
 
 int main()
 {
-	cout << "hsm test" << endl;
-	Camera canon("canon");
-	canon.run(5);
+    cout << "HSM Demo" << endl;
+    Camera basic("canon");
+    // Turn on the Power
+    basic(HSME_PWR, 0);
+    // Take a picture
+    basic(HSME_RELEASE, 0);
+    // Take another picture
+    basic(HSME_RELEASE, 0);
+    // Playback the photo
+    basic(HSME_MODE, 0);
+    // Oops, pushed the release button by accident
+    basic(HSME_RELEASE, 0);
+    // Go to menu settings
+    basic(HSME_MODE, 0);
+    // Uh oh, low battery
+    basic(HSME_LOWBATT, 0);
+    // Time to turn it off
+    basic(HSME_PWR, 0);
 }

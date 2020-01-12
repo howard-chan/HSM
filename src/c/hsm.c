@@ -48,6 +48,7 @@ static HSM_EVENT HSM_RootHandler(HSM *This, HSM_EVENT xEvent, void *pvParam)
     return HSME_NULL;
 }
 
+// Singleton shared by all HSM iinstances
 HSM_STATE const HSM_ROOT =
 {
     .pxParent = ((void *)0),

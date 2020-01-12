@@ -27,7 +27,8 @@ TARGET  = camera
 # Add this define to enable color debug in color-aware terminals
 DEFINES += -DHSM_COLOR_ENABLE
 # Add this define for customized HSM_EVENT value to string function for human readable debug
-DEFINES += -DHSM_DEBUG_EVT2STR=HSM_Evt2Str
+$(warning HSM_DEBUG_EVT2STR is not set)
+#DEFINES += -DHSM_DEBUG_EVT2STR=HSM_Evt2Str
 
 # Step 2: Define root
 ROOTDIR = ../..
