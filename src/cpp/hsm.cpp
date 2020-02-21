@@ -40,9 +40,9 @@ HsmState::HsmState() : pxParent{nullptr}, pcName{":ROOT:"}, pfnHandler{Hsm::root
 HsmState::HsmState(const char *pcName, handler_t pfnHandler, HsmState *pxParent)
     : pcName{pcName}, pfnHandler{pfnHandler}, pxParent{pxParent}
 {
-	if (!this->pxParent) {
-		this->pxParent = &root;
-	}
+    if (!this->pxParent) {
+        this->pxParent = &root;
+    }
     ucLevel = this->pxParent->ucLevel + 1;
 }
 
@@ -162,7 +162,7 @@ void Hsm::tran(HsmState *pxNextState, void *pvParam, void (*method)(Hsm *This, v
         if (src->ucLevel > dst->ucLevel)
         {
             // source is deeper
-        	axList_exit.push_back(src);
+            axList_exit.push_back(src);
             src = src->pxParent;
         }
         else
@@ -175,7 +175,7 @@ void Hsm::tran(HsmState *pxNextState, void *pvParam, void (*method)(Hsm *This, v
     // 1b) find the common parent
     while (src != dst)
     {
-    	axList_exit.push_back(src);
+        axList_exit.push_back(src);
         src = src->pxParent;
         axList_entry.push_back(dst);
         dst = dst->pxParent;
