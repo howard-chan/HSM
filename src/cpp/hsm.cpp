@@ -22,18 +22,28 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
-
+//========== System Headers =====================
 #include <iostream>
 #include <stdint.h>
 #include <vector>
 
+//========== Local Headers ======================
 #include "hsm.hpp"
 
+//========== Namespace ==========================
 using namespace std;
+namespace hsm {
 
+//========== Defines / Macros ===================
+//========== Forward Declaration ================
+//========== Static Variables ===================
 // Singleton
 static HsmState root;
 
+//========== Function Definitions ===============
+//-----------------------------------------------
+// Class HsmState member function definitions
+//-----------------------------------------------
 // Default statehandler which is reserved for root
 HsmState::HsmState() : pxParent{nullptr}, pcName{":ROOT:"}, pfnHandler{Hsm::root_handler}, ucLevel{0} {}
 
@@ -46,7 +56,9 @@ HsmState::HsmState(const char *pcName, handler_t pfnHandler, HsmState *pxParent)
     ucLevel = this->pxParent->ucLevel + 1;
 }
 
-
+//-----------------------------------------------
+// Class Hsm member function definitions
+//-----------------------------------------------
 hsm_event_t Hsm::root_handler(Hsm *This, hsm_event_t xEvent, void *pvParam)
 {
 #ifdef HSM_DEBUG_EVT2STR
@@ -65,14 +77,20 @@ hsm_event_t Hsm::root_handler(Hsm *This, hsm_event_t xEvent, void *pvParam)
     return HSME_NULL;
 }
 
-void Hsm::setInitState(HsmState *pxInitState)
+void Hsm::start(void)
 {
+    HSM_DEBUGC1("Starting %s[%s]()", pcName, pxCurState->pcName);
+    HSM_DEBUGC2("  %s[%s](ENTRY)", pcName, pxCurState->pcName);
     (*pxCurState)(this, HSME_ENTRY, 0);
+#if HSM_FEATURE_INIT
+    HSM_DEBUGC2("  %s[%s](INIT)", pcName, pxCurState->pcName);
     (*pxCurState)(this, HSME_INIT, 0);
+#endif // HSM_FEATURE_INIT
 
+    // // https://www.giannistsakiris.com/2012/09/07/c-calling-a-member-function-pointer/
     // (this->*((Hsm*)this)->Hsm::pxCurState->HsmState::pfnHandler) (HSME_ENTRY, 0);
     // (this->*((Hsm*)this)->Hsm::pxCurState->HsmState::pfnHandler) (HSME_INIT, 0);
-}
+ }
 
 bool Hsm::isInState(HsmState *pxState) {
     HsmState *pxCur;
@@ -127,11 +145,6 @@ void Hsm::operator()(hsm_event_t xEvent, void *pvParam)
             }
         }
     }
-
-#if 0
-    printf("Run %s[%s](%d, %ld)\n", pcName, pxCurState->pcName, xEvent, (size_t)pvParam);
-    (*pxCurState)(this, xEvent, pvParam);
-#endif
 }
 
 void Hsm::tran(HsmState *pxNextState, void *pvParam, void (*method)(Hsm *This, void *pvParam))
@@ -210,3 +223,4 @@ void Hsm::tran(HsmState *pxNextState, void *pvParam, void (*method)(Hsm *This, v
     (*this->pxCurState)(this, HSME_INIT, pvParam);
 #endif // HSM_FEATURE_INIT
 }
+} // namespace hsm

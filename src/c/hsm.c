@@ -22,15 +22,36 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
+//========== System Headers =====================
 #include <stdint.h>
+
+//========== Local Headers ======================
 #include "hsm.h"
 
+//========== Defines / Macros ===================
+//========== Forward Declaration ================
+static HSM_EVENT HSM_RootHandler(HSM *This, HSM_EVENT xEvent, void *pvParam);
+
+//========== Static Variables ===================
 #if HSM_FEATURE_DEBUG_NESTED_CALL
 uint8_t gucHsmNestLevel;
 const char * const apucHsmNestIndent[] = { "", "", "\t", "\t\t", "\t\t\t", "\t\t\t\t" };
 #endif // HSM_FEATURE_DEBUG_NESTED_CALL
 
-static HSM_EVENT HSM_RootHandler(HSM *This, HSM_EVENT xEvent, void *pvParam)
+// Singleton shared by all HSM iinstances
+HSM_STATE const HSM_ROOT =
+{
+    .pxParent = ((void *)0),
+    .pfnHandler = HSM_RootHandler,
+    .pcName = ":ROOT:",
+    .ucLevel = 0
+};
+
+//========== Function Definitions ===============
+//-----------------------------------------------
+// Class Hsm member function definitions
+//-----------------------------------------------
+HSM_EVENT HSM_RootHandler(HSM *This, HSM_EVENT xEvent, void *pvParam)
 {
 #ifdef HSM_DEBUG_EVT2STR
     const char *pcEvtStr = This->pfnEvt2Str(xEvent);
@@ -48,15 +69,6 @@ static HSM_EVENT HSM_RootHandler(HSM *This, HSM_EVENT xEvent, void *pvParam)
     return HSME_NULL;
 }
 
-// Singleton shared by all HSM iinstances
-HSM_STATE const HSM_ROOT =
-{
-    .pxParent = ((void *)0),
-    .pfnHandler = HSM_RootHandler,
-    .pcName = ":ROOT:",
-    .ucLevel = 0
-};
-
 void HSM_STATE_Create(HSM_STATE *This, const char *pcName, HSM_FN pfnHandler, HSM_STATE *pxParent)
 {
     if (((void *)0) == pxParent)
@@ -67,12 +79,14 @@ void HSM_STATE_Create(HSM_STATE *This, const char *pcName, HSM_FN pfnHandler, HS
     This->pfnHandler = pfnHandler;
     This->pxParent = pxParent;
     This->ucLevel = pxParent->ucLevel + 1;
+#if HSM_MAX_DEPTH
     if (This->ucLevel >= HSM_MAX_DEPTH)
     {
         HSM_DEBUG("Please increase HSM_MAX_DEPTH > %d", This->ucLevel);
         // assert(0, "Please increase HSM_MAX_DEPTH");
         while(1);
     }
+#endif // HSM_MAX_DEPTH
 }
 
 void HSM_Create(HSM *This, const char *pcName, HSM_STATE *pxInitState)
@@ -87,6 +101,9 @@ void HSM_Create(HSM *This, const char *pcName, HSM_STATE *pxInitState)
     This->bmDebugCfg = 0;
     This->bmDebug = 0;
 #endif // HSM_FEATURE_DEBUG_ENABLE
+#if HSM_FEATURE_SAFETY_CHECK
+    This->bIsTran = 0;
+#endif // HSM_FEATURE_SAFETY_CHECK
     // Supress warning for unused variable if HSM_FEATURE_DEBUG_ENABLE is not defined
     (void)pcName;
 
@@ -193,8 +210,13 @@ void HSM_Tran(HSM *This, HSM_STATE *pxNextState, void *pvParam, void (*method)(H
     This->bIsTran = 1;
 #endif // HSM_FEATURE_SAFETY_CHECK
 
+#if HSM_MAX_DEPTH
     HSM_STATE *axList_exit[HSM_MAX_DEPTH];
     HSM_STATE *axList_entry[HSM_MAX_DEPTH];
+#else
+    HSM_STATE *axList_exit[This->pxCurState->ucLevel];
+    HSM_STATE *axList_entry[pxNextState->ucLevel];
+#endif
     uint8_t ucCnt_exit = 0;
     uint8_t ucCnt_entry = 0;
     uint8_t idx;

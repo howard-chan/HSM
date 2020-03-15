@@ -62,27 +62,27 @@ end note
 
 note top of Camera
     <<test>>
-    Camera_t basic;
     void main(void)
     {
+        Camera_t canon;
         // Instantiate Camera
-        Camera_Init(&basic, "Canon");
+        Camera_Init(&canon, "Canon");
         // Turn on the Power
-        Camera_Run(&basic, PWR_CMD, 0);
+        Camera_Run(&canon, PWR_CMD, 0);
         // Take a picture
-        Camera_Run(&basic, RELEASE, (void*)1);
+        Camera_Run(&canon, RELEASE, (void*)1);
         // Take another picture
-        Camera_Run(&basic, RELEASE, 0);
+        Camera_Run(&canon, RELEASE, 0);
         // Playback the photo
-        Camera_Run(&basic, MODE_CMD, 0);
+        Camera_Run(&canon, MODE_CMD, 0);
         // Oops, pushed the release button by accident
-        Camera_Run(&basic, RELEASE, 0);
+        Camera_Run(&canon, RELEASE, 0);
         // Go to menu settings
-        Camera_Run(&basic, MODE_CMD, 0);
+        Camera_Run(&canon, MODE_CMD, 0);
         // Uh oh, low battery
-        Camera_Run(&basic, LOWBATT_EVT, 0);
+        Camera_Run(&canon, LOWBATT_EVT, 0);
         // Time to turn it off
-        Camera_Run(&basic, PWR_CMD, 0);
+        Camera_Run(&canon, PWR_CMD, 0);
     }
 end note
 

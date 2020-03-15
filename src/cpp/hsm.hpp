@@ -25,9 +25,13 @@ SOFTWARE.
 #ifndef __HSM_HPP__
 #define __HSM_HPP__
 
+//========== System Headers =====================
 #include <stdint.h>
 
-//----HSM OPTIONAL FEATURES SECTION[BEGIN]----
+namespace hsm {
+//===============================================
+//----HSM OPTIONAL FEATURES SECTION[BEGIN]-------
+//-----------------------------------------------
 // Enable for HSM debugging
 #define HSM_FEATURE_DEBUG_ENABLE            1
     // If HSM_FEATURE_DEBUG_ENABLE is defined, then select DEBUG OUT type
@@ -49,9 +53,11 @@ SOFTWARE.
 #define HSM_FEATURE_SAFETY_CHECK            1
 // Enable HSME_INIT Handling.  Can be disabled if no states handles HSME_INIT
 #define HSM_FEATURE_INIT                    1
-//----HSM OPTIONAL FEATURES SECTION[END]----
+//-----------------------------------------------
+//----HSM OPTIONAL FEATURES SECTION[END]---------
+//===============================================
 
-//----Debug Macros----
+//========== Debug Macros =======================
 #if HSM_FEATURE_DEBUG_ENABLE
     // Terminal Colors
     #if HSM_FEATURE_DEBUG_COLOR
@@ -71,16 +77,6 @@ SOFTWARE.
         #define HSM_COLOR_CYN
         #define HSM_COLOR_NON
     #endif // HSM_FEATURE_DEBUG_COLOR
-    // Use this macro to set a custom function that returns a human readable string from HSM event per HSM
-    #define HSM_SET_EVT2STR(hsm, evt2StrFn) { (hsm)->pfnEvt2Str = (evt2StrFn); }
-    // Use this macro to changing the pcPrefix for that object
-    #define HSM_SET_PREFIX(hsm, preFix) { (hsm)->pcPrefix = (preFix); }
-    // Use this macro to Enable/Disable HSM debugging for that object
-    #define HSM_SET_DEBUG(hsm, bmEnable) { (hsm)->bmDebugCfg = (hsm)->bmDebug = (bmEnable); }
-    // Use this macro to get the current HSM debugging state for that object
-    #define HSM_GET_DEBUG(hsm) ((hsm)->bmDebugCfg)
-    // Use this macro to supress debug messages for a single call of HSM_Run (e.g. frequent timer events)
-    #define HSM_SUPPRESS_DEBUG(hsm, bmEnable) { (hsm)->bmDebug = (hsm)->bmDebugCfg & ~(bmEnable); }
     // Below are the DEBUG options for HSM_SET_DEBUG(), HSM_SUPPRESS_DEBUG()
     #define HSM_SHOW_RUN                (1)
     #define HSM_SHOW_TRAN               (2)
@@ -117,110 +113,158 @@ SOFTWARE.
         #endif // HSM_FEATURE_DEBUG_NESTED_CALL
     #endif // HSM_FEATURE_DEBUG_EMBEDDED
 #else
-    #define HSM_SET_EVT2STR(hsm, evt2StrHook)
-    #define HSM_SET_PREFIX(hsm, preFix)
-    #define HSM_SET_DEBUG(hsm, bEnable)
-    #define HSM_GET_DEBUG(hsm)  (0)
-    #define HSM_SUPPRESS_DEBUG(hsm, bmEnable)
     #define HSM_DEBUGC1(...)
     #define HSM_DEBUGC2(...)
     #define HSM_DEBUGC3(...)
     #define HSM_DEBUG(...)
 #endif // HSM_FEATURE_DEBUG_ENABLE
 
+//----Reserved HSM Event definitions-------------
+#define HSME_NULL   (Hsm::kNULL)
+#define HSME_START  (Hsm::kSTART)
+#define HSME_INIT   (Hsm::kINIT)
+#define HSME_ENTRY  (Hsm::kENTRY)
+#define HSME_EXIT   (Hsm::kEXIT)
 
-//----State definitions----
-// TODO: Replace with enum
-#define HSME_NULL   0
-#define HSME_START  1
-#define HSME_INIT   (-3)
-#define HSME_ENTRY  (-2)
-#define HSME_EXIT   (-1)
-
-enum class HsmEvent
-{
-    kNULL = 0,
-    kSTART = 1,
-    kINIT = -3,
-    kENTRY = -2,
-    kEXIT = -1
-};
-
-
+//========== Typedef ============================
 typedef uint32_t hsm_event_t;
 
+//========== Class Declaration ==================
 class Hsm;
 
+/**
+ * @brief      This class describes a hsm state and its position in the state
+ *             hierarchy.
+ *
+ * @details    All state objects are instances of HsmState.  Each state object
+ *             is assigned a state event handler by using one of two methods.
+ *
+ *             1) state object is instantiated with a static event handler
+ *             method.
+ *
+ *             2) A functor class is derived from HsmState and the virtual
+ *             operator() is overridden with the static event handler method
+ */
 class HsmState {
     friend class Hsm;
 public:
     typedef hsm_event_t (*handler_t)(Hsm *pxHsm, hsm_event_t xEvent, void *pvParam);
+
 private:
     HsmState *pxParent;         // parent state
+    handler_t pfnHandler;       // associated event handler for state. Not used if operator() is overloaded
     const char *pcName;         // name of state
-    handler_t pfnHandler;       // State Handler
     uint8_t ucLevel;            // Depth level of the state
+
 public:
-    HsmState();
+    HsmState();                 // DO NOT USE: This constructor is reserved from the internal root handler
+
+    /**
+     * @brief      Constructs a new instance.
+     *
+     * @param[in]  pcName      Name of state (for debugging)
+     * @param[in]  pfnHandler  Pointer to state event handler that implements
+     *                         state behavior.  Set this to `nullptr` if this
+     *                         constructed by a derived state
+     * @param[in]  pxParent    [Optional] Pointer to the parent of state.  If NULL, then
+     *                         internal root state is assigned as parent as a catch-all
+     */
     HsmState(const char *pcName, handler_t pfnHandler, HsmState *pxParent=nullptr);
+
+    /**
+     * @brief        Calls the state's event handler
+     *
+     * @details      [Optional] The derived class of HsmState shall override
+     *               this virtual function to implement the state's event
+     *               handling behavior.
+     *
+     * @note         If this is overridden, then `pfnHandler` assigned to state
+     *               constructor is effectively unused is not used.  However it
+     *               should be set to nullptr for consistency.
+     *
+     * @param[inout] pxHsm    Pointer to Hsm object instance
+     * @param[in]    xEvent   The event to be processed by the HSM object
+     * @param[inout] pvParam  [Optional] Parameter associated with the xEvent
+     *
+     * @return       0 or NULL - Event has been consumed / handled, otherwise
+     *               event is unhandled and forward to the parent state
+     */
     virtual hsm_event_t operator()(Hsm *pxHsm, hsm_event_t xEvent, void *pvParam) {
         return pfnHandler(pxHsm, xEvent, pvParam);
     }
 };
 
 
+/**
+ * @brief      This is the base class that implements the HSM.  All HSMs shall
+ *             derive from this base class.
+ *
+ * @details    This class provides the framework for implementing a user-defined
+ *             HSM.
+ */
 class Hsm {
     friend class HsmState;
+
     HsmState *pxCurState;       // Current HSM State
-    // Debug features
+
+    //----Optional Debug features-----
+#if HSM_FEATURE_DEBUG_ENABLE
+#ifdef HSM_DEBUG_EVT2STR
+    const char *(*pfnEvt2Str)(hsm_event_t xEvent);
+#endif // HSM_DEBUG_EVT2STR
     const char *pcName;         // Name of HSM Instance
     const char *pcPrefix;       // Prefix for debugging (e.g. grep)
     uint8_t bmDebugCfg;         // HSM debug configuration flag
     uint8_t bmDebug;            // HSM run-time debug flag
+#endif // HSM_FEATURE_DEBUG_ENABLE
+#if HSM_FEATURE_SAFETY_CHECK
     bool bIsTran;               // HSM Transition Flag
-    // Methods
+#endif // HSM_FEATURE_SAFETY_CHECK
+
+    // Common root event handler if no event is consumed
     static hsm_event_t root_handler(Hsm *This, hsm_event_t xEvent, void *pvParam);
 
 public:
+    enum
+    {
+        kNULL   =  0,
+        kSTART  =  1,
+        kINIT   = -3,
+        kENTRY  = -2,
+        kEXIT   = -1
+    };
+
     /**
      * @brief      Create the HSM instance.  Required for each instance
      *
      * @details    When the HSM instance is create, Initial state event handler
-     *             will receive the HSME_ENTRY and HSME_INIT events.
+     *             will receive the HSME_ENTRY and HSME_INIT events when start()
+     *             is called.
      *
      * @param[in]  pcName       Name of state machine (for debugging)
      * @param[in]  pxInitState  Initial state of statemachine
      */
-    Hsm(const char *pcName="Hsm", HsmState *pxInitState=nullptr)
-        : pxCurState{pxInitState}, pcName{pcName}, pcPrefix{""}, bmDebugCfg{0}, bmDebug{0}, bIsTran{false}
+    Hsm(const char *pcName, HsmState *pxInitState) :
+#if HSM_FEATURE_DEBUG_ENABLE
+        pcName{pcName}, pcPrefix{""}, bmDebugCfg{0}, bmDebug{0}, bIsTran{false},
+#ifdef HSM_DEBUG_EVT2STR
+        pfnEvt2Str{nullptr},
+#endif // HSM_DEBUG_EVT2STR
+#endif // HSM_FEATURE_DEBUG_ENABLE
+        pxCurState{pxInitState}
     {
-        HSM_DEBUGC1("  %s[%s](ENTRY)", pcName, pxInitState->pcName);
-        // (*pxCurState)(this, HSME_ENTRY, 0);
-#if HSM_FEATURE_INIT
-        HSM_DEBUGC1("  %s[%s](INIT)", pcName, pxInitState->pcName);
-        // (*pxCurState)(this, HSME_INIT, 0);
-#endif // HSM_FEATURE_INIT
-
-        // // https://www.giannistsakiris.com/2012/09/07/c-calling-a-member-function-pointer/
-        // (this->*((Hsm*)this)->Hsm::pxCurState->HsmState::pfnHandler) (HSME_ENTRY, 0);
-        // (this->*((Hsm*)this)->Hsm::pxCurState->HsmState::pfnHandler) (HSME_INIT, 0);
     }
 
-    void setInitState(HsmState *pxInitState);
-
     /**
-     * @brief      Sets the HSM debug output
+     * @brief      Starts the HSM by invoking the HSME_ENTRY and HSME_INIT
+     *             events to the Init State
      *
-     * @param[in]  bmEnable  bitmask of debug options
+     * @details    [REQUIRED] This must be called in the constructor body of the
+     *             derived Hsm class.  This is necessary because during the base
+     *             Hsm object constructor is called before the states objects
+     *             are constructed.
      */
-    void setDebug(uint8_t bmEnable) { bmDebugCfg = bmDebug = bmEnable; }
-
-    /**
-     * @brief      Adds a prefix to debug messages
-     *
-     * @param[in]  prefix  The prefix string
-     */
-    void setPrefix(const char *prefix) { pcPrefix = prefix; }
+    void start(void);
 
     /**
      * @brief      Get the current HSM STATE
@@ -269,20 +313,55 @@ public:
      *             or HSME_EXIT.  But it is ok to call HSM_Tran during the
      *             handling of HSME_INIT.
      *
-     * @param      nextState  The next state
-     * @param      param      The parameter
-     * @param[in]  method     The method
+     * @param[in]  pxNextState  Pointer to next HSM STATE
+     * @param[in]  pvParam      Optional Parameter associated with HSME_ENTRY
+     *                          and HSME_EXIT event
+     * @param[in]  method       Optional function hook between the HSME_ENTRY
+     *                          and HSME_EXIT event handling
      */
     void tran(HsmState *pxNextState, void *pvParam=nullptr, void (*method)(Hsm *This, void *pvParam)=nullptr);
-#if 0
-    void tran(HsmState *nextState) {
-        printf("  Tran %s[%s]->[%s]:\n", pcName, pxCurState->pcName, nextState->pcName);
-        pxCurState = nextState;
-    }
-    void tran(HsmState& nextState) {
-        printf("  Tran %s[%s]->[%s]:\n", pcName, pxCurState->pcName, nextState.pcName);
-        pxCurState = &nextState;
-    }
-#endif
+
+#if HSM_FEATURE_DEBUG_ENABLE
+    /**
+     * @brief      Get the current HSM debugging state
+     *
+     * @return     The debug.
+     */
+    uint8_t getDebug(void) { return bmDebugCfg; }
+
+    /**
+     * @brief      Sets the HSM debugging state for output
+     *
+     * @param[in]  bmEnable  bitmask of debug options (e.g. HSM_SHOW_ALL)
+     */
+    void setDebug(uint8_t bmEnable) { bmDebugCfg = bmDebug = bmEnable; }
+
+    /**
+     * @brief      Sets a prefix to the debug messages
+     *
+     * @param[in]  prefix  The prefix string
+     */
+    void setPrefix(const char *prefix) { pcPrefix = prefix; }
+
+    /**
+     * @brief      Suppress debug messages for a single call of HSM run (e.g.
+     *             frequent timer events)
+     *
+     * @param[in]  bmEnable  bitmask of debug options (e.g. HSM_SHOW_ALL)
+     */
+    void supress(uint8_t bmEnable) { bmDebug = bmDebugCfg & ~(bmEnable); }
+
+#ifdef HSM_DEBUG_EVT2STR
+    /**
+     * @brief      Sets a custom function that returns a human readable string
+     *             from HSM event
+     *
+     * @param[in]  evt2StrFn  The event 2 string function
+     */
+    void setEvt2Str(const char *(*evt2StrFn)(hsm_event_t xEvent) = nullptr) { pfnEvt2Str = evt2StrFn; }
+#endif // HSM_DEBUG_EVT2STR
+#endif // HSM_FEATURE_DEBUG_ENABLE
 };
+
+} // namespace hsm
 #endif // __HSM_HPP__

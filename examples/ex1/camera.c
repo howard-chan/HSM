@@ -30,7 +30,7 @@ SOFTWARE.
 #define HSME_MODE       (HSME_START + 2)
 #define HSME_LOWBATT    (HSME_START + 3)
 
-typedef struct CAMERA_T
+typedef struct
 {
    /*
     Class that implements the Camera HSM and inherits from the HSM class
@@ -52,17 +52,16 @@ typedef struct CAMERA_T
     // Child members
     char param1;
     char param2;
-} CAMERA;
+} Camera_t;
 
-CAMERA basic;
-HSM_STATE CAMERA_StateOff;
-HSM_STATE CAMERA_StateOn;
-HSM_STATE CAMERA_StateOnShoot;
-HSM_STATE CAMERA_StateOnDisp;
-HSM_STATE CAMERA_StateOnDispPlay;
-HSM_STATE CAMERA_StateOnDispMenu;
+HSM_STATE Camera_StateOff;
+HSM_STATE Camera_StateOn;
+HSM_STATE Camera_StateOnShoot;
+HSM_STATE Camera_StateOnDisp;
+HSM_STATE Camera_StateOnDispPlay;
+HSM_STATE Camera_StateOnDispMenu;
 
-HSM_EVENT CAMERA_StateOffHndlr(HSM *This, HSM_EVENT event, void *param)
+HSM_EVENT Camera_StateOffHndlr(HSM *This, HSM_EVENT event, void *param)
 {
     if (event == HSME_ENTRY)
     {
@@ -74,13 +73,13 @@ HSM_EVENT CAMERA_StateOffHndlr(HSM *This, HSM_EVENT event, void *param)
     }
     else if (event == HSME_PWR)
     {
-        HSM_Tran(This, &CAMERA_StateOn, 0, NULL);
+        HSM_Tran(This, &Camera_StateOn, 0, NULL);
         return 0;
     }
     return event;
 }
 
-HSM_EVENT CAMERA_StateOnHndlr(HSM *This, HSM_EVENT event, void *param)
+HSM_EVENT Camera_StateOnHndlr(HSM *This, HSM_EVENT event, void *param)
 {
     if (event == HSME_ENTRY)
     {
@@ -92,11 +91,11 @@ HSM_EVENT CAMERA_StateOnHndlr(HSM *This, HSM_EVENT event, void *param)
     }
     else if (event == HSME_INIT)
     {
-        HSM_Tran(This, &CAMERA_StateOnShoot, 0, NULL);
+        HSM_Tran(This, &Camera_StateOnShoot, 0, NULL);
     }
     else if (event == HSME_PWR)
     {
-        HSM_Tran(This, &CAMERA_StateOff, 0, NULL);
+        HSM_Tran(This, &Camera_StateOff, 0, NULL);
         return 0;
     }
     else if (event == HSME_LOWBATT)
@@ -107,7 +106,7 @@ HSM_EVENT CAMERA_StateOnHndlr(HSM *This, HSM_EVENT event, void *param)
     return event;
 }
 
-HSM_EVENT CAMERA_StateOnShootHndlr(HSM *This, HSM_EVENT event, void *param)
+HSM_EVENT Camera_StateOnShootHndlr(HSM *This, HSM_EVENT event, void *param)
 {
     if (event == HSME_ENTRY)
     {
@@ -124,13 +123,13 @@ HSM_EVENT CAMERA_StateOnShootHndlr(HSM *This, HSM_EVENT event, void *param)
     }
     else if (event == HSME_MODE)
     {
-        HSM_Tran(This, &CAMERA_StateOnDispPlay, 0, NULL);
+        HSM_Tran(This, &Camera_StateOnDispPlay, 0, NULL);
         return 0;
     }
     return event;
 }
 
-HSM_EVENT CAMERA_StateOnDispHndlr(HSM *This, HSM_EVENT event, void *param)
+HSM_EVENT Camera_StateOnDispHndlr(HSM *This, HSM_EVENT event, void *param)
 {
     if (event == HSME_ENTRY)
     {
@@ -143,7 +142,7 @@ HSM_EVENT CAMERA_StateOnDispHndlr(HSM *This, HSM_EVENT event, void *param)
     return event;
 }
 
-HSM_EVENT CAMERA_StateOnDispPlayHndlr(HSM *This, HSM_EVENT event, void *param)
+HSM_EVENT Camera_StateOnDispPlayHndlr(HSM *This, HSM_EVENT event, void *param)
 {
     if (event == HSME_ENTRY)
     {
@@ -151,13 +150,13 @@ HSM_EVENT CAMERA_StateOnDispPlayHndlr(HSM *This, HSM_EVENT event, void *param)
     }
     else if (event == HSME_MODE)
     {
-        HSM_Tran(This, &CAMERA_StateOnDispMenu, 0, NULL);
+        HSM_Tran(This, &Camera_StateOnDispMenu, 0, NULL);
         return 0;
     }
     return event;
 }
 
-HSM_EVENT CAMERA_StateOnDispMenuHndlr(HSM *This, HSM_EVENT event, void *param)
+HSM_EVENT Camera_StateOnDispMenuHndlr(HSM *This, HSM_EVENT event, void *param)
 {
     if (event == HSME_ENTRY)
     {
@@ -165,7 +164,7 @@ HSM_EVENT CAMERA_StateOnDispMenuHndlr(HSM *This, HSM_EVENT event, void *param)
     }
     else if (event == HSME_MODE)
     {
-        HSM_Tran(This, &CAMERA_StateOnShoot, 0, NULL);
+        HSM_Tran(This, &Camera_StateOnShoot, 0, NULL);
         return 0;
     }
     return event;
@@ -186,48 +185,56 @@ const char *HSM_Evt2Str(uint32_t event)
     }
 }
 
-void CAMERA_Init(CAMERA *This, char *name)
+void Camera_Init(Camera_t *This, char *name)
 {
     // Step 1: Create the HSM States
-    HSM_STATE_Create(&CAMERA_StateOff, "Off", CAMERA_StateOffHndlr, NULL);
-    HSM_STATE_Create(&CAMERA_StateOn, "On", CAMERA_StateOnHndlr, NULL);
-    HSM_STATE_Create(&CAMERA_StateOnShoot, "On.Shoot", CAMERA_StateOnShootHndlr, &CAMERA_StateOn);
-    HSM_STATE_Create(&CAMERA_StateOnDisp, "On.Disp", CAMERA_StateOnDispHndlr, &CAMERA_StateOn);
-    HSM_STATE_Create(&CAMERA_StateOnDispPlay, "On.Disp.Play", CAMERA_StateOnDispPlayHndlr, &CAMERA_StateOnDisp);
-    HSM_STATE_Create(&CAMERA_StateOnDispMenu, "On.Disp.Menu", CAMERA_StateOnDispMenuHndlr, &CAMERA_StateOnDisp);
+    HSM_STATE_Create(&Camera_StateOff, "Off", Camera_StateOffHndlr, NULL);
+    HSM_STATE_Create(&Camera_StateOn, "On", Camera_StateOnHndlr, NULL);
+    HSM_STATE_Create(&Camera_StateOnShoot, "On.Shoot", Camera_StateOnShootHndlr, &Camera_StateOn);
+    HSM_STATE_Create(&Camera_StateOnDisp, "On.Disp", Camera_StateOnDispHndlr, &Camera_StateOn);
+    HSM_STATE_Create(&Camera_StateOnDispPlay, "On.Disp.Play", Camera_StateOnDispPlayHndlr, &Camera_StateOnDisp);
+    HSM_STATE_Create(&Camera_StateOnDispMenu, "On.Disp.Menu", Camera_StateOnDispMenuHndlr, &Camera_StateOnDisp);
+
     // Step 2: Initiailize the HSM and starting state
-    HSM_Create((HSM *)This, name, &CAMERA_StateOff);
+    HSM_Create((HSM *)This, name, &Camera_StateOff);
+
     // Step 3: [Optional] Enable HSM debug
     HSM_SET_PREFIX((HSM *)This, "[DBG] ");
     HSM_SET_DEBUG((HSM *)This, HSM_SHOW_ALL);
-    // Step 4: CAMERA member initialization
+
+    // Step 4: Camera_t member initialization
     This->param1 = 0;
     This->param2 = 1;
 }
 
-void CAMERA_Run(CAMERA *This, HSM_EVENT event, void *param)
+void Camera_Run(Camera_t *This, HSM_EVENT event, void *param)
 {
+    // Uncomment below to suppress debug for a specific event (e.g. periodic timer event)
+    // if (event == <NAME.OF.EVENT.YOU.WANT.TO.SUPPRESS>)
+    //    HSM_SUPPRESS_DEBUG((HSM *)This, HSM_SHOW_ALL);
+
     HSM_Run((HSM *)This, event, param);
 }
 
 void main(void)
 {
+    Camera_t canon;
     // Instantiate Camera
-    CAMERA_Init(&basic, "Canon");
+    Camera_Init(&canon, "Canon PS");
     // Turn on the Power
-    CAMERA_Run(&basic, HSME_PWR, 0);
+    Camera_Run(&canon, HSME_PWR, 0);
     // Take a picture
-    CAMERA_Run(&basic, HSME_RELEASE, 0);
+    Camera_Run(&canon, HSME_RELEASE, 0);
     // Take another picture
-    CAMERA_Run(&basic, HSME_RELEASE, 0);
+    Camera_Run(&canon, HSME_RELEASE, 0);
     // Playback the photo
-    CAMERA_Run(&basic, HSME_MODE, 0);
+    Camera_Run(&canon, HSME_MODE, 0);
     // Oops, pushed the release button by accident
-    CAMERA_Run(&basic, HSME_RELEASE, 0);
+    Camera_Run(&canon, HSME_RELEASE, 0);
     // Go to menu settings
-    CAMERA_Run(&basic, HSME_MODE, 0);
+    Camera_Run(&canon, HSME_MODE, 0);
     // Uh oh, low battery
-    CAMERA_Run(&basic, HSME_LOWBATT, 0);
+    Camera_Run(&canon, HSME_LOWBATT, 0);
     // Time to turn it off
-    CAMERA_Run(&basic, HSME_PWR, 0);
+    Camera_Run(&canon, HSME_PWR, 0);
 }

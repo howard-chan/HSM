@@ -29,10 +29,15 @@ SOFTWARE.
 extern "C" {
 #endif
 
-/* Add platform specific types here */
+//========== System Headers =====================
 #include <stdint.h>
 
-//----HSM OPTIONAL FEATURES SECTION[BEGIN]----
+//========== Local Headers =====================
+// Add platform specific types here
+
+//===============================================
+//----HSM OPTIONAL FEATURES SECTION[BEGIN]-------
+//-----------------------------------------------
 // Enable for HSM debugging
 #define HSM_FEATURE_DEBUG_ENABLE            1
     // If HSM_FEATURE_DEBUG_ENABLE is defined, then select DEBUG OUT type
@@ -54,19 +59,13 @@ extern "C" {
 #define HSM_FEATURE_SAFETY_CHECK            1
 // Enable HSME_INIT Handling.  Can be disabled if no states handles HSME_INIT
 #define HSM_FEATURE_INIT                    1
-//----HSM OPTIONAL FEATURES SECTION[END]----
-
 // Set the maximum nested levels
-#define HSM_MAX_DEPTH 5
+//#define HSM_MAX_DEPTH 5
+//-----------------------------------------------
+//----HSM OPTIONAL FEATURES SECTION[END]---------
+//===============================================
 
-//----State definitions----
-#define HSME_NULL   0
-#define HSME_START  1
-#define HSME_INIT   ((HSM_EVENT)(-3))
-#define HSME_ENTRY  ((HSM_EVENT)(-2))
-#define HSME_EXIT   ((HSM_EVENT)(-1))
-
-//----Debug Macros----
+//========== Debug Macros =======================
 #if HSM_FEATURE_DEBUG_ENABLE
     // Terminal Colors
     #if HSM_FEATURE_DEBUG_COLOR
@@ -94,7 +93,7 @@ extern "C" {
     #define HSM_SET_DEBUG(hsm, bmEnable) { (hsm)->bmDebugCfg = (hsm)->bmDebug = (bmEnable); }
     // Use this macro to get the current HSM debugging state for that object
     #define HSM_GET_DEBUG(hsm) ((hsm)->bmDebugCfg)
-    // Use this macro to supress debug messages for a single call of HSM_Run (e.g. frequent timer events)
+    // Use this macro to suppress debug messages for a single call of HSM_Run (e.g. frequent timer events)
     #define HSM_SUPPRESS_DEBUG(hsm, bmEnable) { (hsm)->bmDebug = (hsm)->bmDebugCfg & ~(bmEnable); }
     // Below are the DEBUG options for HSM_SET_DEBUG(), HSM_SUPPRESS_DEBUG()
     #define HSM_SHOW_RUN                (1)
@@ -143,8 +142,17 @@ extern "C" {
     #define HSM_DEBUG(...)
 #endif // HSM_FEATURE_DEBUG_ENABLE
 
-//----Structure declaration----
+//----Reserved HSM Event definitions-------------
+#define HSME_NULL   0
+#define HSME_START  1
+#define HSME_INIT   ((HSM_EVENT)(-3))
+#define HSME_ENTRY  ((HSM_EVENT)(-2))
+#define HSME_EXIT   ((HSM_EVENT)(-1))
+
+//========== Typedef ============================
 typedef uint32_t HSM_EVENT;
+
+//========== Struct Declaration =================
 typedef struct HSM_STATE_T HSM_STATE;
 typedef struct HSM_T HSM;
 
@@ -161,6 +169,8 @@ struct HSM_STATE_T
 struct HSM_T
 {
     HSM_STATE *pxCurState;                          // Current HSM State
+
+    //----Optional Debug features-----
 #if HSM_FEATURE_DEBUG_ENABLE
 #ifdef HSM_DEBUG_EVT2STR
     const char *(*pfnEvt2Str)(HSM_EVENT xEvent);    // Hook to convert event to string
@@ -190,8 +200,8 @@ extern const char * const apucHsmNestIndent[];
  * @param[in]    pcName      Name of state (for debugging)
  * @param[in]    pfnHandler  Pointer to state event handler that implements
  *                           state behavior
- * @param[in]    pxParent    Pointer to Parent of state, If NULL, then internal
- *                           ROOT handler is used as catch-all
+ * @param[in]    pxParent    [Optional] Pointer to the parent of state.  If NULL, then
+ *                           internal root state is assigned as parent as a catch-all
  */
 void HSM_STATE_Create(HSM_STATE *This, const char *pcName, HSM_FN pfnHandler, HSM_STATE *pxParent);
 
