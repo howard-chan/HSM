@@ -235,7 +235,7 @@ public:
     };
 
     /**
-     * @brief      Create the HSM instance.  Required for each instance
+     * @brief      Create the HSM instance.  Required for each instance.
      *
      * @details    When the HSM instance is create, Initial state event handler
      *             will receive the HSME_ENTRY and HSME_INIT events when start()

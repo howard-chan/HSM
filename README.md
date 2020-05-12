@@ -22,7 +22,7 @@
 > SOFTWARE.
 
 --------------------------------
-HSM - Hierarchical State Machine
+# HSM - Hierarchical State Machine
 1. Overview
 2. Using HSM Framework
   2.1. Define the events and states

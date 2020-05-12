@@ -22,22 +22,23 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
-import sys, os
+import sys
+import os
 sys.path.append(os.path.abspath('../../src/python'))
 
 from hsm import HSM
-from hsm import HSM_Event
+from hsm import HsmEvent
 
-class evt(HSM_Event):
+class evt(HsmEvent):
     '''Class that implements the Camera events and inherits from HSM_Event class
     Since this is python, we can just use strings instead of enumeration which
     makes this demo easier to demonstrate the event handling
     '''
     #PWR, RELEASE, MODE, LOWBATT = range(HSM_Event.FIRST, HSM_Event.FIRST+4)
-    PWR="PWR"
-    RELEASE="RELEASE"
-    MODE="MODE"
-    LOWBATT="LOWBATT"
+    PWR = "PWR"
+    RELEASE = "RELEASE"
+    MODE = "MODE"
+    LOWBATT = "LOWBATT"
 
 class Camera(HSM):
     '''Class that implements the Camera HSM and inherits from the HSM class
@@ -58,16 +59,16 @@ class Camera(HSM):
         # Step 1: Initialize the HSM
         super(Camera, self).__init__(name)
         # Step 2: Create the HSM States
-        self.stateOff = self.CreateState("Off", self.StateOffHndlr)
-        self.stateOn = self.CreateState("On", self.StateOnHndlr)
-        self.stateOnShoot = self.CreateState("On.Shoot", self.StateOnShootHndlr, self.stateOn)
-        self.stateOnDisp = self.CreateState("On.Disp", self.StateOnDispHndlr, self.stateOn)
-        self.stateOnDispPlay = self.CreateState("On.Disp.Play", self.StateOnDispPlayHndlr, self.stateOnDisp)
-        self.stateOnDispMenu = self.CreateState("On.Disp.Menu", self.StateOnDispMenuHndlr, self.stateOnDisp)
+        self.state_Off = self.create_state("Off", self.StateOffHndlr)
+        self.state_On = self.create_state("On", self.StateOnHndlr)
+        self.state_OnShoot = self.create_state("On.Shoot", self.StateOnShootHndlr, self.state_On)
+        self.state_OnDisp = self.create_state("On.Disp", self.StateOnDispHndlr, self.state_On)
+        self.state_OnDispPlay = self.create_state("On.Disp.Play", self.StateOnDispPlayHndlr, self.state_OnDisp)
+        self.state_OnDispMenu = self.create_state("On.Disp.Menu", self.StateOnDispMenuHndlr, self.state_OnDisp)
         # Step 3: Set the starting state
-        self.SetInitState(self.stateOff)
+        self.set_init_state(self.state_Off)
         # Step 4[Optional] Enable HSM debug
-        self.hsmDebug = True
+        self.debug = True
 
     def StateOffHndlr(self, event):
         if event == evt.ENTRY:
@@ -75,7 +76,7 @@ class Camera(HSM):
         elif event == evt.EXIT:
             print("\tExit Low Power Mode")
         elif event == evt.PWR:
-            self.Tran(self.stateOn)
+            self.tran(self.state_On)
             return None
         return event
 
@@ -85,9 +86,9 @@ class Camera(HSM):
         elif event == evt.EXIT:
             print("\tClose Lens")
         elif event == evt.INIT:
-            self.Tran(self.stateOnShoot)
+            self.tran(self.state_OnShoot)
         elif event == evt.PWR:
-            self.Tran(self.stateOff)
+            self.tran(self.state_Off)
             return None
         elif event == evt.LOWBATT:
             print("\tBeep low battery warning")
@@ -103,7 +104,7 @@ class Camera(HSM):
             print("\tCLICK!, save photo")
             return None
         elif event == evt.MODE:
-            self.Tran(self.stateOnDispPlay)
+            self.tran(self.state_OnDispPlay)
             return None
         return event
 
@@ -118,7 +119,7 @@ class Camera(HSM):
         if event == evt.ENTRY:
             print("\tDisplay Pictures")
         elif event == evt.MODE:
-            self.Tran(self.stateOnDispMenu)
+            self.tran(self.state_OnDispMenu)
             return None
         return event
 
@@ -126,29 +127,29 @@ class Camera(HSM):
         if event == evt.ENTRY:
             print("\tDisplay Menu")
         elif event == evt.MODE:
-            self.Tran(self.stateOnShoot)
+            self.tran(self.state_OnShoot)
             return None
         return event
 
 def main():
     # Instantiate Camera
-    basic = Camera("Canon")
+    canon = Camera("Canon")
     # Turn on the Power
-    basic.Run(evt.PWR)
+    canon.run(evt.PWR)
     # Take a picture
-    basic.Run(evt.RELEASE)
+    canon.run(evt.RELEASE)
     # Take another picture
-    basic.Run(evt.RELEASE)
+    canon.run(evt.RELEASE)
     # Playback the photo
-    basic.Run(evt.MODE)
+    canon.run(evt.MODE)
     # Oops, pushed the release button by accident
-    basic.Run(evt.RELEASE)
+    canon.run(evt.RELEASE)
     # Go to menu settings
-    basic.Run(evt.MODE)
+    canon.run(evt.MODE)
     # Uh oh, low battery
-    basic.Run(evt.LOWBATT)
+    canon.run(evt.LOWBATT)
     # Time to turn it off
-    basic.Run(evt.PWR)
+    canon.run(evt.PWR)
 
 
 if __name__ == "__main__":
