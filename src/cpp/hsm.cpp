@@ -80,6 +80,7 @@ hsm_event_t Hsm::root_handler(Hsm *This, hsm_event_t xEvent, void *pvParam)
 void Hsm::start(void)
 {
     HSM_DEBUGC1("Starting %s[%s]()", pcName, pxCurState->pcName);
+    // Invoke ENTRY and INIT event
     HSM_DEBUGC2("  %s[%s](ENTRY)", pcName, pxCurState->pcName);
     (*pxCurState)(this, HSME_ENTRY, 0);
 #if HSM_FEATURE_INIT
@@ -125,6 +126,7 @@ void Hsm::operator()(hsm_event_t xEvent, void *pvParam)
         HSM_DEBUGC1("Run %s[%s](evt:%#lx, param:%#lx)", pcName, pxState->pcName, (unsigned long)xEvent, (unsigned long)pvParam);
     }
 
+    // Run until event has been consumed by state handler
     while (xEvent)
     {
         // xEvent = pxState->pfnHandler(pxHsm, xEvent, pvParam);
@@ -145,6 +147,10 @@ void Hsm::operator()(hsm_event_t xEvent, void *pvParam)
             }
         }
     }
+#if HSM_FEATURE_DEBUG_ENABLE
+    // Restore debug back to the configured debug
+    bmDebug = bmDebugCfg;
+#endif // HSM_FEATURE_DEBUG_ENABLE
 }
 
 void Hsm::tran(HsmState *pxNextState, void *pvParam, void (*method)(Hsm *This, void *pvParam))

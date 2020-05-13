@@ -28,12 +28,13 @@ SOFTWARE.
 #include "hsm.hpp"
 
 using namespace std;
+using namespace hsm;
 
 // Camera HSM Events
-#define HSME_PWR        (HSME_START)
-#define HSME_RELEASE    (HSME_START + 1)
-#define HSME_MODE       (HSME_START + 2)
-#define HSME_LOWBATT    (HSME_START + 3)
+#define PWR_BUTTON_EVT        (HSME_START)
+#define SHUTTER_BUTTON_EVT    (HSME_START + 1)
+#define MODE_BUTTON_EVT       (HSME_START + 2)
+#define LOWBATT_EVT           (HSME_START + 3)
 
 class Camera : public Hsm {
    /*
@@ -76,7 +77,7 @@ class Camera : public Hsm {
             cout << "\tExit Lower Power Mode" << endl;
             return 0;
 
-        case HSME_PWR:
+        case PWR_BUTTON_EVT:
             camera.tran(&camera.stateOn);
             return 0;
         }
@@ -99,11 +100,11 @@ class Camera : public Hsm {
             camera.tran(&camera.stateOnShoot);
             return 0;
 
-        case HSME_PWR:
+        case PWR_BUTTON_EVT:
             camera.tran(&camera.stateOff);
             return 0;
 
-        case HSME_LOWBATT:
+        case LOWBATT_EVT:
             cout << "\tBeep low battery warning" << endl;
             return 0;
         }
@@ -122,11 +123,16 @@ class Camera : public Hsm {
             cout << "\tDisable Sensor" << endl;
             return 0;
 
-        case HSME_RELEASE:
-            cout << "\tCLICK!, save photo #" << ++camera.m_shots << endl;
+        case SHUTTER_BUTTON_EVT:
+            // NOTE: param is normally casted before used (e.g. structure or primitive)
+            if ((uintptr_t)pvParam == 1) {
+                cout << "\tFocusing on subject" << endl;
+            } else {
+                cout << "\tCLICK!, save photo #" << ++camera.m_shots << endl;
+            }
             return 0;
 
-        case HSME_MODE:
+        case MODE_BUTTON_EVT:
             camera.tran(&camera.stateOnDispPlay);
             return 0;
         }
@@ -156,7 +162,7 @@ class Camera : public Hsm {
             cout << "\tDisplay " << camera.m_shots << " pictures" << endl;
             return 0;
 
-        case HSME_MODE:
+        case MODE_BUTTON_EVT:
             camera.tran(&camera.stateOnDispMenu);
             return 0;
         }
@@ -171,7 +177,7 @@ class Camera : public Hsm {
             cout << "\tDisplay Menu" << endl;
             return 0;
 
-        case HSME_MODE:
+        case MODE_BUTTON_EVT:
             camera.tran(&camera.stateOnShoot);
             return 0;
         }
@@ -194,8 +200,8 @@ public:
         // Step 3: [Optional] Enable HSM debug
         setPrefix("[DBG] ");
         setDebug(HSM_SHOW_ALL);
-        // Set the initial state
-        setInitState(&stateOff);
+        // Start the initial state
+        start();
     }
 };
 
@@ -203,21 +209,23 @@ public:
 int main()
 {
     cout << "HSM Demo" << endl;
-    Camera basic("canon");
+    Camera simple("canon");
     // Turn on the Power
-    basic(HSME_PWR, 0);
+    simple(PWR_BUTTON_EVT, 0);
+    // Half-press to focus camera
+    simple(SHUTTER_BUTTON_EVT, (void *)1);
     // Take a picture
-    basic(HSME_RELEASE, 0);
+    simple(SHUTTER_BUTTON_EVT, 0);
     // Take another picture
-    basic(HSME_RELEASE, 0);
+    simple(SHUTTER_BUTTON_EVT, 0);
     // Playback the photo
-    basic(HSME_MODE, 0);
+    simple(MODE_BUTTON_EVT, 0);
     // Oops, pushed the release button by accident
-    basic(HSME_RELEASE, 0);
+    simple(SHUTTER_BUTTON_EVT, 0);
     // Go to menu settings
-    basic(HSME_MODE, 0);
+    simple(MODE_BUTTON_EVT, 0);
     // Uh oh, low battery
-    basic(HSME_LOWBATT, 0);
+    simple(LOWBATT_EVT, 0);
     // Time to turn it off
-    basic(HSME_PWR, 0);
+    simple(PWR_BUTTON_EVT, 0);
 }

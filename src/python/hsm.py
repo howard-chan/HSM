@@ -38,6 +38,7 @@ class HSM(object):
     This class describes a hsm.
     """
 
+    # Colors for debug
     RED = "\033[1;31m"
     GRN = "\033[1;32m"
     YEL = "\033[1;33m"
@@ -45,6 +46,12 @@ class HSM(object):
     MAG = "\033[1;35m"
     CYN = "\033[1;36m"
     NON = "\033[0m"
+
+    # Debug modes
+    SHOW_RUN = 1
+    SHOW_TRAN = 2
+    SHOW_INTACT = 4
+    SHOW_ALL = SHOW_RUN | SHOW_TRAN | SHOW_INTACT
 
     class State:
         """
@@ -74,7 +81,7 @@ class HSM(object):
                 raise "Raise exception here: The parent is not a State"
 
 
-    def __root_handler(self, event):
+    def __root_handler(self, event, param):
         """
         Default Root handler which reports an unhandled event
 
@@ -84,21 +91,39 @@ class HSM(object):
         :returns:   None - which indicates the event has been consumed
         :rtype:     None
         """
-        print(HSM.YEL + "\tEvent:%s dropped, No Parent handling of %s[%s]" %
-              (event, self.name, self.cur_state.name) + HSM.NON)
+        print(HSM.YEL + self.prefix + "\tEvent:{} dropped, No Parent handling of {}[{}] param {}"
+              .format(event, self.name, self.cur_state.name, param) + HSM.NON)
         return None
 
     def __debug_run(self, msg):
-        if self.debug:
-            print(HSM.BLU + msg + HSM.NON)
+        if self.debug & HSM.SHOW_RUN:
+            print(HSM.BLU + self.prefix + msg + HSM.NON)
 
     def __debug_tran(self, msg):
-        if self.debug:
-            print(HSM.CYN + msg + HSM.NON)
+        if self.debug & HSM.SHOW_TRAN:
+            print(HSM.CYN + self.prefix + msg + HSM.NON)
 
     def __debug_intact(self, msg):
-        if self.debug:
-            print(HSM.CYN + msg + HSM.NON)
+        if self.debug & HSM.SHOW_INTACT:
+            print(HSM.CYN + self.prefix + msg + HSM.NON)
+
+    def debug_set(self, enable_msk):
+        """
+        Enable/Disable HSM debugging for that object
+
+        :param      enable_msk:  bitmask for debug feature
+        :type       enable_msk:  bitmask (see HSM.SHOW_ALL)
+        """
+        self.debug = self.debug_cfg = enable_msk
+
+    def debug_suppress(self, disable_msk):
+        """
+        Suppress debug messages for a single call of HSM_Run (e.g. frequent timer events)
+
+        :param      disable_msk:  bitmask for suppressing debug printing for one run
+        :type       disable_msk:  bitmask (see HSM.SHOW_ALL)
+        """
+        self.debug = self.debug_cfg & ~disable_msk
 
     def __init__(self, name=""):
         """
@@ -109,9 +134,21 @@ class HSM(object):
         """
         self.lock = False
         self.name = name
-        self.debug = False
+        self.prefix = ""
+        self.debug_cfg = 0
+        self.debug = 0
         self.state_root = self.State(":root:", self.__root_handler)
         self.cur_state = self.state_root
+
+    def __call__(self, event=None, param=None):
+        """
+        This runs the state's event handler and forwards unhandled events to the
+        parent state
+
+        :param      event:  The event
+        :type       event:  Number
+        """
+        self.run(event, param)
 
     def create_state(self, name, handler, parent=None):
         """
@@ -152,7 +189,25 @@ class HSM(object):
         """
         return self.cur_state
 
-    def run(self, event=None):
+    def is_in_state(self, state):
+        """
+        Determines whether the specified state is in state or parent state.
+
+        :param      state:  The state to check
+        :type       state:  State
+
+        :returns:   True if the specified state is in state, False otherwise.
+        :rtype:     boolean
+        """
+        cur_state = self.cur_state
+        while cur_state:
+            if cur_state == state:
+                return True
+            # Check the parent
+            cur_state = cur_state.parent
+        return False
+
+    def run(self, event=None, param=None):
         """
         This runs the state's event handler and forwards unhandled events to the
         parent state
@@ -161,15 +216,18 @@ class HSM(object):
         :type       event:  Number
         """
         state = self.cur_state
-        self.__debug_run("Run %s[%s](evt:%s)" % (self.name, state.name, event))
+        self.__debug_run("Run {}[{}](evt:{}, param:{})".format(self.name, state.name, event, param))
+        # Run until event has been consumed by state handler
         while event:
-            event = state.handler(event)
+            event = state.handler(event, param)
             state = state.parent
             if event:
                 self.__debug_run("  evt:%s unhandled, passing to %s[%s]" %
                                  (event, self.name, state.name))
+        # Restore debug back to the configured debug
+        self.debug = self.debug_cfg
 
-    def tran(self, next_state, method=None):
+    def tran(self, next_state, param=None, method=None):
         """
         This performs the state transition with calls of exit, entry and init
         Bulk of the work handles the exit and entry event during transitions
@@ -210,20 +268,19 @@ class HSM(object):
             dst = dst.parent
         # 2) Process all the exit events
         for src in list_exit:
-            self.__debug_intact("  %s[%s](%s)" % (self.name, src.name, "EXIT"))
-            src.handler(HsmEvent.EXIT)
+            self.__debug_intact("  %s[%s](EXIT)" % (self.name, src.name))
+            src.handler(HsmEvent.EXIT, param)
         # 3) Call the transitional method
         if method and hasattr(method, '__call__'):
-            method()
+            method(param)
         # 4) Process all the entry events
         for dst in list_entry:
-            self.__debug_intact("  %s[%s](%s)" % (self.name, dst.name, "ENTRY"))
-            dst.handler(HsmEvent.ENTRY)
+            self.__debug_intact("  %s[%s](ENTRY)" % (self.name, dst.name))
+            dst.handler(HsmEvent.ENTRY, param)
         # 5) Now we can set the destination state
         self.cur_state = next_state
-
         # Unlock safety check
         self.lock = False
-        # 7) Invoke INIT signal
-        self.__debug_intact("  %s[%s](%s)" % (self.name, next_state.name, "INIT"))
-        self.cur_state.handler(HsmEvent.INIT)
+        # 6) Invoke INIT signal
+        self.__debug_intact("  %s[%s](INIT)" % (self.name, next_state.name))
+        self.cur_state.handler(HsmEvent.INIT, param)

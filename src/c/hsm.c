@@ -109,11 +109,12 @@ void HSM_Create(HSM *This, const char *pcName, HSM_STATE *pxInitState)
 
     // Initialize state
     This->pxCurState = pxInitState;
+    HSM_DEBUGC1("Starting %s[%s]()", pcName, pxInitState->pcName);
     // Invoke ENTRY and INIT event
-    HSM_DEBUGC1("  %s[%s](ENTRY)", This->pcName, pxInitState->pcName);
+    HSM_DEBUGC2("  %s[%s](ENTRY)", This->pcName, pxInitState->pcName);
     This->pxCurState->pfnHandler(This, HSME_ENTRY, 0);
 #if HSM_FEATURE_INIT
-    HSM_DEBUGC1("  %s[%s](INIT)", This->pcName, pxInitState->pcName);
+    HSM_DEBUGC2("  %s[%s](INIT)", This->pcName, pxInitState->pcName);
     This->pxCurState->pfnHandler(This, HSME_INIT, 0);
 #endif // HSM_FEATURE_INIT
 }
@@ -163,6 +164,7 @@ void HSM_Run(HSM *This, HSM_EVENT event, void *pvParam)
         HSM_DEBUGC1("Run %s[%s](evt:%#lx, param:%#lx)", This->pcName, state->pcName, (unsigned long)event, (unsigned long)pvParam);
     }
 
+    // Run until event has been consumed by state handler
     while (event)
     {
         event = state->pfnHandler(This, event, pvParam);

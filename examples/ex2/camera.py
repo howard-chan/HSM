@@ -22,6 +22,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
+
 import sys
 import os
 sys.path.append(os.path.abspath('../../src/python'))
@@ -68,9 +69,10 @@ class Camera(HSM):
         # Step 3: Set the starting state
         self.set_init_state(self.state_Off)
         # Step 4[Optional] Enable HSM debug
-        self.debug = True
+        self.debug_set(HSM.SHOW_ALL)
+        self.prefix = "[DBG] "
 
-    def StateOffHndlr(self, event):
+    def StateOffHndlr(self, event, param):
         if event == evt.ENTRY:
             print("\tEnter Low Power Mode")
         elif event == evt.EXIT:
@@ -80,7 +82,7 @@ class Camera(HSM):
             return None
         return event
 
-    def StateOnHndlr(self, event):
+    def StateOnHndlr(self, event, param):
         if event == evt.ENTRY:
             print("\tOpen Lens")
         elif event == evt.EXIT:
@@ -95,7 +97,7 @@ class Camera(HSM):
             return None
         return event
 
-    def StateOnShootHndlr(self, event):
+    def StateOnShootHndlr(self, event, param):
         if event == evt.ENTRY:
             print("\tEnable Sensor")
         elif event == evt.EXIT:
@@ -108,14 +110,14 @@ class Camera(HSM):
             return None
         return event
 
-    def StateOnDispHndlr(self, event):
+    def StateOnDispHndlr(self, event, param):
         if event == evt.ENTRY:
             print("\tTurn on LCD")
         elif event == evt.EXIT:
             print("\tTurn off LCD")
         return event
 
-    def StateOnDispPlayHndlr(self, event):
+    def StateOnDispPlayHndlr(self, event, param):
         if event == evt.ENTRY:
             print("\tDisplay Pictures")
         elif event == evt.MODE:
@@ -123,7 +125,7 @@ class Camera(HSM):
             return None
         return event
 
-    def StateOnDispMenuHndlr(self, event):
+    def StateOnDispMenuHndlr(self, event, param):
         if event == evt.ENTRY:
             print("\tDisplay Menu")
         elif event == evt.MODE:
