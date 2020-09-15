@@ -78,7 +78,6 @@ class HSM(object):
         the parent state"""
         state = self.curState
         if self.hsmDebug:
-            pass
             print "Run %s[%s](evt:%s)" % (self.name, state.name, event)
         while event:
             event = state.handler(event)
